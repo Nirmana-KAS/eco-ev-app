@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/Nirmana-KAS/Tempate-Photo/blob/main/AppLogo.png" alt="ECO EV Logo" width="180"/>
+  <img src="https://github.com/Nirmana-KAS/Tempate-Photo/blob/main/AppLogo-EcoEv.png" alt="ECO EV Logo" width="180"/>
 </p>
 
 <h1 align="center">⚡ ECO EV – Powering Sri Lanka's Green Mobility ⚡</h1>
