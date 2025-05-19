@@ -60,15 +60,9 @@ Sri Lanka’s roads are going electric, but where do you plug in?
 
 ---
 
-## 📸 Screenshots
-
-> _Add screenshots/gifs here once the UI is ready!_
-
----
-
 ## 🛠️ Getting Started
 
 1. **Clone the Repo**
    ```bash
-   git clone https://github.com/your-username/eco_ev_app.git
+   git clone https://github.com/Nirmana-KAS/eco_ev_app.git
    cd eco_ev_app
