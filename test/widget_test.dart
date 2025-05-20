@@ -8,12 +8,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:eco_ev_app/main.dart';
+// Ensure this import points to the file where MyApp is defined.
+// If MyApp is in lib/main.dart, this import is correct.
+// If MyApp is in a different file, update the import accordingly.
+import 'package:eco_ev_app/main.dart'; // Update this path if MyApp is not in main.dart
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp());
+    await tester.pumpWidget(const EcoEvApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
