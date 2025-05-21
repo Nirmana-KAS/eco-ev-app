@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:eco_ev_app/data/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key}); // Use super parameter shorthand
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -16,6 +17,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,25 +30,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void _register() {
-    if (_nicController.text.isNotEmpty &&
-        _usernameController.text.isNotEmpty &&
-        _emailController.text.isNotEmpty &&
-        _contactController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty &&
-        _confirmPasswordController.text.isNotEmpty) {
-      // Password match check (simple for now)
-      if (_passwordController.text == _confirmPasswordController.text) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+  void _register() async {
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final error = await AuthService.signUp(
+      nic: _nicController.text.trim(),
+      username: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
+      contact: _contactController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (error == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Registration successful!")));
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/sign-in');
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill in all fields")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
@@ -57,18 +74,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
           children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.black87,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             const Text(
               "Hello! Register to get\nstarted",
               style: TextStyle(
@@ -117,56 +122,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
               },
             ),
             const SizedBox(height: 22),
-            // Register Button
             SizedBox(
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF23272E),
+                  backgroundColor: const Color(
+                    0xFF61B15A,
+                  ), // <-- Register button color
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: _register,
-                child: const Text(
-                  "Register",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
+                onPressed: _isLoading ? null : _register,
+                child:
+                    _isLoading
+                        ? const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        )
+                        : const Text(
+                          "Register",
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
               ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    "Or Register with",
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                ),
-                Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-              ],
-            ),
-            const SizedBox(height: 22),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _SocialLoginButton(
-                  icon: 'assets/images/GoogleButton.png', // Google icon
-                  onPressed: () {
-                    // Add Google registration logic later
-                  },
-                ),
-                const SizedBox(width: 24),
-                _SocialLoginButton(
-                  icon: 'assets/images/AppleButton.png', // Apple icon
-                  onPressed: () {
-                    // Add Apple registration logic later
-                  },
-                ),
-              ],
             ),
             const SizedBox(height: 36),
             Row(
@@ -183,7 +163,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: const Text(
                     "Login Now",
                     style: TextStyle(
-                      color: Color(0xFF00B7C4),
+                      color: Color(0xFF138808), // <-- Login Now text color
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -197,7 +177,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // Helper input field
   Widget _inputField(
     TextEditingController controller,
     String hint, {
@@ -222,7 +201,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // Helper password field with toggle
   Widget _passwordField(
     TextEditingController controller,
     String hint,
@@ -250,36 +228,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             color: Colors.grey,
           ),
           onPressed: toggle,
-        ),
-      ),
-    );
-  }
-}
-
-// Social login button widget (same as in sign_in_screen.dart)
-class _SocialLoginButton extends StatelessWidget {
-  final String icon;
-  final VoidCallback onPressed;
-
-  const _SocialLoginButton({
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Ink(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.black12, width: 1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Image.asset(icon, width: 28, height: 28),
         ),
       ),
     );

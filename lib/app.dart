@@ -1,0 +1,64 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'features/auth/screens/splash_screen.dart';
+import 'features/auth/screens/welcome_screen.dart';
+import 'features/auth/screens/sign_in_screen.dart';
+import 'features/auth/screens/sign_up_screen.dart';
+import 'features/auth/screens/forgot_password_screen.dart';
+import 'features/auth/screens/otp_verification_screen.dart';
+import 'features/auth/screens/create_new_password_screen.dart';
+import 'features/auth/screens/password_changed_screen.dart';
+import 'features/home/screens/home_screen.dart';
+import 'features/map/screens/map_screen.dart'; // <-- Add this import
+
+// Example fallback theme definition (remove if already defined in theme.dart)
+final ThemeData ecoEvTheme = ThemeData(
+  primarySwatch: Colors.green,
+  visualDensity: VisualDensity.adaptivePlatformDensity,
+);
+
+class EcoEvRoot extends StatelessWidget {
+  const EcoEvRoot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ECO EV',
+      debugShowCheckedModeBanner: false,
+      theme: ecoEvTheme, // <<--- Use your theme here
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const AuthGate(),
+        '/welcome': (context) => const WelcomeScreen(),
+        '/sign-in': (context) => const SignInScreen(),
+        '/sign-up': (context) => const SignUpScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/otp-verification': (context) => const OtpVerificationScreen(),
+        '/create-new-password': (context) => const CreateNewPasswordScreen(),
+        '/password-changed': (context) => const PasswordChangedScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/map': (context) => const MapScreen(), // <-- Add this route
+      },
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SplashScreen();
+        }
+        if (snapshot.hasData) {
+          return const HomeScreen();
+        }
+        return const WelcomeScreen();
+      },
+    );
+  }
+}

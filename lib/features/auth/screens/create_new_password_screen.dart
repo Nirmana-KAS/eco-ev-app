@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CreateNewPasswordScreen extends StatefulWidget {
-  const CreateNewPasswordScreen({super.key}); // Use super parameter shorthand
+  const CreateNewPasswordScreen({super.key});
 
   @override
   State<CreateNewPasswordScreen> createState() =>
@@ -45,20 +45,20 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
     // Simulate API/database operation (replace with real logic)
     await Future.delayed(const Duration(seconds: 1));
 
+    if (!mounted) return;
+
     setState(() {
       _isLoading = false;
     });
 
-    // Show success message
-    if (!mounted) return; // <-- Add this check
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Password changed successfully!")),
     );
 
-    // Navigate to sign-in after a short delay
+    // Navigate to password changed confirmation
     await Future.delayed(const Duration(seconds: 1));
     if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/sign-in', (route) => false);
+      Navigator.pushReplacementNamed(context, '/password-changed');
     }
   }
 
@@ -96,7 +96,6 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
               style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.4),
             ),
             const SizedBox(height: 32),
-            // New Password
             TextField(
               controller: _newPasswordController,
               obscureText: _obscureNewPassword,
@@ -128,7 +127,6 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Confirm Password
             TextField(
               controller: _confirmPasswordController,
               obscureText: _obscureConfirmPassword,
@@ -165,7 +163,7 @@ class _CreateNewPasswordScreenState extends State<CreateNewPasswordScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF23272E),
+                  backgroundColor: const Color(0xFF23272E),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

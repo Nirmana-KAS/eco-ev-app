@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  const OtpVerificationScreen({super.key}); // Use super parameter shorthand
+  const OtpVerificationScreen({super.key});
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
-  final List<TextEditingController> _controllers = List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
 
   @override
   void dispose() {
@@ -22,30 +25,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     super.dispose();
   }
 
-  void _onCodeChanged(int idx, String value) {
-    if (value.length == 1 && idx < _controllers.length - 1) {
-      _focusNodes[idx + 1].requestFocus();
-    } else if (value.isEmpty && idx > 0) {
-      _focusNodes[idx - 1].requestFocus();
+  void _onOtpChanged(String value, int index) {
+    if (value.isNotEmpty && index < 3) {
+      _focusNodes[index + 1].requestFocus();
+    } else if (value.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
     }
   }
 
-  void _verify() {
-    if (_controllers.every((c) => c.text.isNotEmpty)) {
-      // Navigate to create new password page
+  void _verifyOtp() {
+    String otp = _controllers.map((c) => c.text).join();
+    if (otp == '1234') {
       Navigator.pushReplacementNamed(context, '/create-new-password');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter the complete code")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Invalid OTP code")));
     }
-  }
-
-  void _resendCode() {
-    // Add resend code logic here
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Verification code resent")),
-    );
   }
 
   @override
@@ -58,60 +54,71 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.black87,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             const Text(
               "OTP Verification",
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF23272E),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             const Text(
               "Enter the verification code we just sent on your email address.",
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 15, color: Colors.grey),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(4, (idx) {
-                return SizedBox(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                return Container(
                   width: 54,
+                  height: 54,
+                  margin: const EdgeInsets.symmetric(horizontal: 7),
                   child: TextField(
-                    controller: _controllers[idx],
-                    focusNode: _focusNodes[idx],
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    controller: _controllers[index],
+                    focusNode: _focusNodes[index],
                     keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
                     maxLength: 1,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                     decoration: InputDecoration(
-                      counterText: '',
+                      counterText: "",
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.cyan.shade200, width: 2),
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF00B7C4),
+                          width: 1.5,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.cyan.shade700, width: 2),
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF00B7C4),
+                          width: 2,
+                        ),
                       ),
+                      fillColor: Colors.grey[100],
                       filled: true,
-                      fillColor: Colors.grey[50],
                     ),
-                    onChanged: (val) => _onCodeChanged(idx, val),
+                    onChanged: (value) => _onOtpChanged(value, index),
                   ),
                 );
               }),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -122,14 +129,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: _verify,
+                onPressed: _verifyOtp,
                 child: const Text(
                   "Verify",
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
             ),
-            const SizedBox(height: 80),
+            const SizedBox(height: 120),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -138,7 +145,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   style: TextStyle(fontSize: 15),
                 ),
                 GestureDetector(
-                  onTap: _resendCode,
+                  onTap: () {
+                    // Add resend logic here if needed
+                  },
                   child: const Text(
                     "Resend",
                     style: TextStyle(

@@ -12,7 +12,12 @@
           "package_name": "com.example.eco_ev_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "468907635705-g1cfoj479ungfqbbjpm3loc7n0q81e3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBc5C3JC3xCGty3btpPNQYxglMSifh-5fo"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "468907635705-g1cfoj479ungfqbbjpm3loc7n0q81e3i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

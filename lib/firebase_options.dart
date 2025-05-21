@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'eco-ev-app-android',
     storageBucket: 'eco-ev-app-android.firebasestorage.app',
   );
+
 }
