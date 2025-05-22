@@ -12,24 +12,38 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _mapController;
-  final Set<Marker> _markers = {};
+  Set<Marker> _markers = {};
 
   final List<StationModel> _stations = [
     StationModel(
       id: '1',
       name: "GreenCharge Colombo",
+      owner: "ABC Green Pvt Ltd",
+      address: "Colombo City Center",
       latitude: 6.9271,
       longitude: 79.8612,
-      address: "Colombo City Center",
-      availablePorts: 3,
+      contactNumber: "0771234567",
+      gmail: "greencharge.colombo@gmail.com",
+      slots2x: 5,
+      slots1x: 3,
+      openingHours: "8:00 AM - 6:00 PM",
+      pricePerHour: 500,
+      logoUrl: "",
     ),
     StationModel(
       id: '2',
       name: "Eco Power Kandy",
+      owner: "Eco Power (Pvt) Ltd",
+      address: "Kandy Downtown",
       latitude: 7.2906,
       longitude: 80.6337,
-      address: "Kandy Downtown",
-      availablePorts: 2,
+      contactNumber: "0719876543",
+      gmail: "eco.kandy@gmail.com",
+      slots2x: 4,
+      slots1x: 2,
+      openingHours: "7:30 AM - 7:00 PM",
+      pricePerHour: 450,
+      logoUrl: "",
     ),
   ];
 
@@ -38,19 +52,21 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _setStationMarkers();
     _getUserLocation();
+    _setStationMarkers();
   }
 
   void _setStationMarkers() {
+    Set<Marker> markers = {};
     for (final station in _stations) {
-      _markers.add(
+      markers.add(
         Marker(
           markerId: MarkerId(station.id),
           position: LatLng(station.latitude, station.longitude),
           infoWindow: InfoWindow(
             title: station.name,
-            snippet: '${station.availablePorts} ports • ${station.address}',
+            snippet:
+                '${station.slots2x + station.slots1x} ports • ${station.address}',
           ),
           icon: BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueGreen,
@@ -58,7 +74,9 @@ class _MapScreenState extends State<MapScreen> {
         ),
       );
     }
-    setState(() {});
+    setState(() {
+      _markers = markers;
+    });
   }
 
   Future<void> _getUserLocation() async {
@@ -81,6 +99,7 @@ class _MapScreenState extends State<MapScreen> {
 
     locationData = await location.getLocation();
 
+    if (!mounted) return;
     setState(() {
       _currentLocation = LatLng(
         locationData.latitude ?? 7.0,
@@ -88,12 +107,17 @@ class _MapScreenState extends State<MapScreen> {
       );
     });
 
-    // Move camera to user's location if map is ready
     if (_mapController != null && _currentLocation != null) {
       _mapController!.animateCamera(
         CameraUpdate.newLatLngZoom(_currentLocation!, 14),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -103,7 +127,7 @@ class _MapScreenState extends State<MapScreen> {
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: _currentLocation ?? const LatLng(7.0, 80.0),
-          zoom: 7.3,
+          zoom: _currentLocation == null ? 7.3 : 14,
         ),
         myLocationButtonEnabled: true,
         myLocationEnabled: true,

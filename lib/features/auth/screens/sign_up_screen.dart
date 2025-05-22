@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:eco_ev_app/data/services/auth_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -9,6 +12,10 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  File? _selectedImage;
+  bool _isUploadingImage = false;
+  // Removed unused _uploadedPhotoUrl field
+
   final _nicController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -30,40 +37,81 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  Future<String?> _uploadProfilePhoto(String uid) async {
+    if (_selectedImage == null) return null;
+    try {
+      setState(() => _isUploadingImage = true);
+      final ref = FirebaseStorage.instance.ref().child('user_photos/$uid.jpg');
+      await ref.putFile(_selectedImage!);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      // print('Profile photo upload error: $e');
+      debugPrint('Profile photo upload error: $e');
+      return null;
+    } finally {
+      setState(() => _isUploadingImage = false);
+    }
+  }
+
   void _register() async {
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
+    // 1. Create Firebase Auth user first
     final error = await AuthService.signUp(
       nic: _nicController.text.trim(),
       username: _usernameController.text.trim(),
       email: _emailController.text.trim(),
       contact: _contactController.text.trim(),
       password: _passwordController.text.trim(),
+      photoUrl: null, // temp, we'll update below if photo is picked
     );
 
     if (!mounted) return;
 
+    // 2. Upload the profile photo IF signup succeeded and photo is picked
+    if (error == null && _selectedImage != null) {
+      final uid = await AuthService.getCurrentUid(); // A helper to get the current user’s uid
+      if (uid != null) {
+        final url = await _uploadProfilePhoto(uid);
+        // Update the user doc with the new photo URL
+        await AuthService.updatePhotoUrl(uid, url ?? "");
+      }
+    }
+
     setState(() => _isLoading = false);
 
     if (error == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Registration successful!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registration successful!")),
+      );
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/sign-in');
       }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
     }
   }
 
@@ -84,6 +132,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
             const SizedBox(height: 28),
+            Center(
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  CircleAvatar(
+                    radius: 44,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                  ),
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: InkWell(
+                      onTap: _pickImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: _isUploadingImage
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.edit, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             _inputField(_nicController, "NIC/Passport"),
             const SizedBox(height: 14),
             _inputField(_usernameController, "Username"),
@@ -127,25 +214,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(
-                    0xFF61B15A,
-                  ), // <-- Register button color
+                  backgroundColor: const Color(0xFF61B15A),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(25),
                   ),
+                  shadowColor: Colors.green.withOpacity(0.4),
                 ),
-                onPressed: _isLoading ? null : _register,
-                child:
-                    _isLoading
-                        ? const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        )
-                        : const Text(
-                          "Register",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                onPressed: _isUploadingImage || _isLoading ? null : _register,
+                child: (_isUploadingImage || _isLoading)
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Register',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
               ),
             ),
             const SizedBox(height: 36),
@@ -163,7 +244,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: const Text(
                     "Login Now",
                     style: TextStyle(
-                      color: Color(0xFF138808), // <-- Login Now text color
+                      color: Color(0xFF138808),
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -188,9 +269,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: Colors.grey[100],
+        fillColor: const Color.fromARGB(255, 241, 248, 237),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -213,9 +294,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: Colors.grey[100],
+        fillColor: const Color.fromARGB(255, 241, 248, 237),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(

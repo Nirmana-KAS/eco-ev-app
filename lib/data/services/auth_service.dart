@@ -14,30 +14,32 @@ class AuthService {
     required String email,
     required String contact,
     required String password,
+    String? photoUrl,
   }) async {
     try {
-      var userDoc = await _firestore.collection('users').doc(nic).get();
-      if (userDoc.exists) {
-        return 'This NIC/Passport is already registered!';
-      }
-      UserCredential cred = await _auth.createUserWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      await _firestore.collection('users').doc(nic).set({
-        'uid': cred.user!.uid,
+      await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).set({
+        'uid': credential.user!.uid,
         'nic': nic,
         'username': username,
         'email': email,
         'contact': contact,
-        'created_at': FieldValue.serverTimestamp(),
+        'photoUrl': photoUrl ?? '',
+        'role': 'user',
         'auth_provider': 'email',
+        'created_at': FieldValue.serverTimestamp(),
       });
       return null;
     } on FirebaseAuthException catch (e) {
+      print('FIREBASE_AUTH_ERROR: ${e.code} - ${e.message}');
       return e.message;
-    } catch (e) {
-      return e.toString();
+    } catch (e, stack) {
+      print('SIGN UP ERROR: $e');
+      print('STACKTRACE: $stack');
+      return "Registration failed. Please try again.";
     }
   }
 
@@ -172,6 +174,39 @@ class AuthService {
   static Future<void> signOut() async {
     await _auth.signOut();
     await GoogleSignIn().signOut();
+  }
+
+  // Save user profile
+  static Future<void> saveUserProfile({
+    required String uid,
+    required String nic,
+    required String username,
+    required String email,
+    required String contact,
+    String? photoUrl,
+  }) async {
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'uid': uid,
+      'nic': nic,
+      'username': username,
+      'email': email,
+      'contact': contact,
+      'photoUrl': photoUrl ?? '',
+      'role': 'user',
+      'auth_provider': 'email',
+      'created_at': FieldValue.serverTimestamp(),
+    });
+  }
+
+  static Future<String?> getCurrentUid() async {
+    final user = FirebaseAuth.instance.currentUser;
+    return user?.uid;
+  }
+
+  static Future<void> updatePhotoUrl(String uid, String url) async {
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'photoUrl': url,
+    });
   }
 }
 

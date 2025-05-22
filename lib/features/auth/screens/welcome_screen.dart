@@ -32,8 +32,10 @@ class WelcomeScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF61B15A),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(25),
                       ),
+                      elevation: 8, // <-- 3D effect
+                      shadowColor: Colors.green.withOpacity(0.4), // <-- Soft green shadow
                     ),
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/sign-in');
@@ -42,7 +44,7 @@ class WelcomeScreen extends StatelessWidget {
                       'Login',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.white, // <-- White text for Login button
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -57,14 +59,15 @@ class WelcomeScreen extends StatelessWidget {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
-                        color: Color(
-                          0xFF61B15A,
-                        ), // <-- Green border for Register button
+                        color: Color(0xFF61B15A),
                         width: 2,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(25),
                       ),
+                      elevation: 8, // <-- 3D effect for OutlinedButton
+                      shadowColor: Colors.green.withOpacity(0.4), // <-- Soft green shadow
+                      backgroundColor: Colors.white,
                     ),
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/sign-up');
@@ -73,9 +76,7 @@ class WelcomeScreen extends StatelessWidget {
                       'Register',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Color(
-                          0xFF61B15A,
-                        ), // Green text for Register button
+                        color: Color(0xFF61B15A),
                       ),
                     ),
                   ),

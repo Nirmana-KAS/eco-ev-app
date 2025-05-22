@@ -9,7 +9,11 @@ import 'features/auth/screens/otp_verification_screen.dart';
 import 'features/auth/screens/create_new_password_screen.dart';
 import 'features/auth/screens/password_changed_screen.dart';
 import 'features/home/screens/home_screen.dart';
-import 'features/map/screens/map_screen.dart'; // <-- Add this import
+import 'features/map/screens/map_screen.dart';
+import 'features/admin/screens/admin_dashboard_screen.dart'; // <-- Add this import
+import 'features/admin/screens/add_station_screen.dart'; // <-- Add this import if you have the file
+import 'features/admin/screens/edit_station_screen.dart'; // <-- Add this import if you have the file
+import 'features/profile/screens/profile_screen.dart';
 
 // Example fallback theme definition (remove if already defined in theme.dart)
 final ThemeData ecoEvTheme = ThemeData(
@@ -37,7 +41,17 @@ class EcoEvRoot extends StatelessWidget {
         '/create-new-password': (context) => const CreateNewPasswordScreen(),
         '/password-changed': (context) => const PasswordChangedScreen(),
         '/home': (context) => const HomeScreen(),
-        '/map': (context) => const MapScreen(), // <-- Add this route
+        '/map': (context) => const MapScreen(),
+        '/admin':
+            (context) => const AdminDashboardScreen(), // <-- Added admin route
+        '/add-station':
+            (context) =>
+                const AddStationScreen(), // <-- Added add-station route
+        '/edit-station': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as String;
+          return EditStationScreen(stationId: args);
+        },
+        '/profile': (context) => const ProfileScreen(), // <-- Added profile route
       },
     );
   }

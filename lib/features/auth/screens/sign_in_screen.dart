@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:eco_ev_app/data/services/auth_service.dart';
 
@@ -63,9 +64,9 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 hintText: "Email",
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: const Color.fromARGB(255, 241, 248, 237),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
@@ -81,9 +82,9 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 hintText: "Enter your password",
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: const Color.fromARGB(255, 241, 248, 237),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
@@ -122,25 +123,22 @@ class _SignInScreenState extends State<SignInScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(
-                    0xFF61B15A,
-                  ), // <-- Login button color
+                  backgroundColor: const Color(0xFF61B15A),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(25), // More rounded
                   ),
+                  elevation: 8, // 3D effect
+                  shadowColor: Colors.green.withOpacity(0.4), // Soft green shadow
                 ),
                 onPressed: _isLoading ? null : _login,
-                child:
-                    _isLoading
-                        ? const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        )
-                        : const Text(
-                          "Login",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      )
+                    : const Text(
+                        "Login",
+                        style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
             const SizedBox(height: 24),
@@ -199,30 +197,29 @@ class _SignInScreenState extends State<SignInScreen> {
               ],
             ),
             const SizedBox(height: 36),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Don’t have an account? ",
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF484848), // <-- Forgot register text color
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, '/sign-up');
-                  },
-                  child: const Text(
-                    "Register Now",
-                    style: TextStyle(
-                      color: Color(0xFF138808), // <-- Register Now text color
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+            Center(
+              child: Text.rich(
+                TextSpan(
+                  text: "Don’t have an account? ",
+                  style: const TextStyle(fontSize: 15, color: Color(0xFF484848)),
+                  children: [
+                    TextSpan(
+                      text: "Register Now",
+                      style: const TextStyle(
+                        color: Color(0xFF138808),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        letterSpacing: 0.2,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          Navigator.pushReplacementNamed(context, '/sign-up');
+                        },
                     ),
-                  ),
+                  ],
                 ),
-              ],
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),
