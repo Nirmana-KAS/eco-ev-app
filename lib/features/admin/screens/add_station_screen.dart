@@ -30,8 +30,11 @@ class _AddStationScreenState extends State<AddStationScreen> {
   TimeOfDay? _closeTime;
 
   File? _selectedImage;
+  File? _cardImage;
   LatLng? _selectedLatLng;
   bool _isLoading = false;
+  bool _isUploadingCardImage = false;
+  String? _uploadedCardImageUrl;
 
   // Map initial position (Sri Lanka)
   static const LatLng _initPosition = LatLng(7.0, 80.0);
@@ -59,11 +62,37 @@ class _AddStationScreenState extends State<AddStationScreen> {
     }
   }
 
+  Future<void> _pickCardImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (pickedFile != null) {
+      setState(() => _cardImage = File(pickedFile.path));
+    }
+  }
+
   Future<String?> _uploadImage(File image) async {
-    final fileName = 'station_logos/${DateTime.now().millisecondsSinceEpoch}_${_nameController.text}.png';
+    final fileName =
+        'station_logos/${DateTime.now().millisecondsSinceEpoch}_${_nameController.text}.png';
     final ref = FirebaseStorage.instance.ref().child(fileName);
     await ref.putFile(image);
     return await ref.getDownloadURL();
+  }
+
+  Future<String?> _uploadCardImage(String stationId) async {
+    if (_cardImage == null) return null;
+    setState(() => _isUploadingCardImage = true);
+    try {
+      final ref = FirebaseStorage.instance.ref().child(
+        'station_card_images/$stationId.jpg',
+      );
+      await ref.putFile(_cardImage!);
+      return await ref.getDownloadURL();
+    } finally {
+      setState(() => _isUploadingCardImage = false);
+    }
   }
 
   String _formatTimeOfDay(TimeOfDay time) {
@@ -73,9 +102,16 @@ class _AddStationScreenState extends State<AddStationScreen> {
   }
 
   Future<void> _addStation() async {
-    if (!_formKey.currentState!.validate() || _selectedLatLng == null || _openTime == null || _closeTime == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedLatLng == null ||
+        _openTime == null ||
+        _closeTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields including location and opening hours.')),
+        const SnackBar(
+          content: Text(
+            'Please fill all required fields including location and opening hours.',
+          ),
+        ),
       );
       return;
     }
@@ -88,23 +124,35 @@ class _AddStationScreenState extends State<AddStationScreen> {
         imageUrl = await _uploadImage(_selectedImage!) ?? "";
       }
 
-      String openingHours = "${_formatTimeOfDay(_openTime!)} - ${_formatTimeOfDay(_closeTime!)}";
+      String openingHours =
+          "${_formatTimeOfDay(_openTime!)} - ${_formatTimeOfDay(_closeTime!)}";
 
-      await FirebaseFirestore.instance.collection('stations').add({
-        'name': _nameController.text.trim(),
-        'owner': _ownerController.text.trim(),
-        'address': _addressController.text.trim(),
-        'latitude': _selectedLatLng!.latitude,
-        'longitude': _selectedLatLng!.longitude,
-        'contactNumber': _contactController.text.trim(),
-        'gmail': _gmailController.text.trim(),
-        'slots2x': int.parse(_slots2xController.text.trim()),
-        'slots1x': int.parse(_slots1xController.text.trim()),
-        'openingHours': openingHours,
-        'pricePerHour': double.parse(_priceController.text.trim()),
-        'logoUrl': imageUrl,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      // Add station data to Firestore
+      DocumentReference stationDoc = await FirebaseFirestore.instance
+          .collection('stations')
+          .add({
+            'name': _nameController.text.trim(),
+            'owner': _ownerController.text.trim(),
+            'address': _addressController.text.trim(),
+            'latitude': _selectedLatLng!.latitude,
+            'longitude': _selectedLatLng!.longitude,
+            'contactNumber': _contactController.text.trim(),
+            'gmail': _gmailController.text.trim(),
+            'slots2x': int.parse(_slots2xController.text.trim()),
+            'slots1x': int.parse(_slots1xController.text.trim()),
+            'openingHours': openingHours,
+            'pricePerHour': double.parse(_priceController.text.trim()),
+            'logoUrl': imageUrl,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+      // Upload card image if available
+      if (_cardImage != null) {
+        String? cardImageUrl = await _uploadCardImage(stationDoc.id);
+        if (cardImageUrl != null) {
+          await stationDoc.update({'cardImageUrl': cardImageUrl});
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -114,9 +162,9 @@ class _AddStationScreenState extends State<AddStationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add station: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to add station: $e')));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -152,9 +200,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
   Widget build(BuildContext context) {
     final double avatarRadius = 48;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Charging Station'),
-      ),
+      appBar: AppBar(title: const Text('Add Charging Station')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -162,49 +208,134 @@ class _AddStationScreenState extends State<AddStationScreen> {
           child: ListView(
             children: [
               // 1. Station Logo Picker
-              Center(
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    CircleAvatar(
-                      radius: avatarRadius,
-                      backgroundColor: Colors.grey[300],
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
-                          : null,
-                      child: _selectedImage == null
-                          ? const Icon(Icons.ev_station, size: 40, color: Colors.white70)
-                          : null,
+              Column(
+                children: [
+                  Text(
+                    "Upload Station Logo",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
                     ),
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          shape: BoxShape.circle,
+                  ),
+                  SizedBox(height: 8),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 48,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              _selectedImage != null
+                                  ? FileImage(_selectedImage!)
+                                  : null,
+                          child:
+                              _selectedImage == null
+                                  ? const Icon(Icons.ev_station, size: 40, color: Colors.white70)
+                                  : null,
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(6.0),
-                          child: Icon(Icons.edit, color: Colors.white, size: 20),
+                        Positioned(
+                          bottom: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              // 1.1 Station Card Image Picker
+              Column(
+                children: [
+                  Text(
+                    "Upload Station Card Image",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: 220,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(18),
+                            image: _cardImage != null
+                                ? DecorationImage(
+                                    image: FileImage(_cardImage!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: _cardImage == null
+                              ? const Icon(Icons.image, size: 60, color: Colors.grey)
+                              : null,
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: InkWell(
+                            onTap: _pickCardImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 18),
               // 2. Station Name
-              _buildTextField(_nameController, 'Station Name', TextInputType.text),
+              _buildTextField(
+                _nameController,
+                'Station Name',
+                TextInputType.text,
+              ),
               const SizedBox(height: 14),
               // 3. Station Owner's Name
-              _buildTextField(_ownerController, 'Owner\'s Name', TextInputType.text),
+              _buildTextField(
+                _ownerController,
+                'Owner\'s Name',
+                TextInputType.text,
+              ),
               const SizedBox(height: 14),
               // 4. Address
-              _buildTextField(_addressController, 'Address', TextInputType.streetAddress),
+              _buildTextField(
+                _addressController,
+                'Address',
+                TextInputType.streetAddress,
+              ),
               const SizedBox(height: 14),
               // 5. Location Picker (Map)
-              Text('Station Location:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Station Location:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               SizedBox(
                 height: 200,
@@ -215,15 +346,17 @@ class _AddStationScreenState extends State<AddStationScreen> {
                         target: _selectedLatLng ?? _initPosition,
                         zoom: 13,
                       ),
-                      markers: _selectedLatLng == null
-                          ? {}
-                          : {
-                              Marker(
-                                markerId: const MarkerId('station_location'),
-                                position: _selectedLatLng!,
-                              ),
-                            },
-                      onTap: (latLng) => setState(() => _selectedLatLng = latLng),
+                      markers:
+                          _selectedLatLng == null
+                              ? {}
+                              : {
+                                Marker(
+                                  markerId: const MarkerId('station_location'),
+                                  position: _selectedLatLng!,
+                                ),
+                              },
+                      onTap:
+                          (latLng) => setState(() => _selectedLatLng = latLng),
                       myLocationButtonEnabled: true,
                       myLocationEnabled: true,
                     ),
@@ -245,22 +378,38 @@ class _AddStationScreenState extends State<AddStationScreen> {
               ),
               const SizedBox(height: 14),
               // 6. Contact Number
-              _buildTextField(_contactController, 'Contact Number', TextInputType.phone),
+              _buildTextField(
+                _contactController,
+                'Contact Number',
+                TextInputType.phone,
+              ),
               const SizedBox(height: 14),
               // 7. Gmail
-              _buildTextField(_gmailController, 'Gmail', TextInputType.emailAddress),
+              _buildTextField(
+                _gmailController,
+                'Gmail',
+                TextInputType.emailAddress,
+              ),
               const SizedBox(height: 14),
               // 8 & 9. Charging Slots
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField(_slots2xController, '2x Speed Slots', TextInputType.number,
-                        validator: (v) => _validateInt(v, '2x Speed Slots')),
+                    child: _buildTextField(
+                      _slots2xController,
+                      '2x Speed Slots',
+                      TextInputType.number,
+                      validator: (v) => _validateInt(v, '2x Speed Slots'),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildTextField(_slots1xController, '1x Speed Slots', TextInputType.number,
-                        validator: (v) => _validateInt(v, '1x Speed Slots')),
+                    child: _buildTextField(
+                      _slots1xController,
+                      '1x Speed Slots',
+                      TextInputType.number,
+                      validator: (v) => _validateInt(v, '1x Speed Slots'),
+                    ),
                   ),
                 ],
               ),
@@ -272,9 +421,11 @@ class _AddStationScreenState extends State<AddStationScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _pickOpenTime,
                       icon: const Icon(Icons.access_time),
-                      label: Text(_openTime == null
-                          ? "Open Time"
-                          : _formatTimeOfDay(_openTime!)),
+                      label: Text(
+                        _openTime == null
+                            ? "Open Time"
+                            : _formatTimeOfDay(_openTime!),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -282,27 +433,40 @@ class _AddStationScreenState extends State<AddStationScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _pickCloseTime,
                       icon: const Icon(Icons.access_time),
-                      label: Text(_closeTime == null
-                          ? "Close Time"
-                          : _formatTimeOfDay(_closeTime!)),
+                      label: Text(
+                        _closeTime == null
+                            ? "Close Time"
+                            : _formatTimeOfDay(_closeTime!),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
               // 11. Price per hour
-              _buildTextField(_priceController, 'Price per hour (e.g. 500)', TextInputType.number,
-                  validator: (v) => _validateDouble(v, 'Price')),
+              _buildTextField(
+                _priceController,
+                'Price per hour (e.g. 500)',
+                TextInputType.number,
+                validator: (v) => _validateDouble(v, 'Price'),
+              ),
               const SizedBox(height: 22),
               // Submit button
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _addStation,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Add Station', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed:
+                      (_isLoading || _isUploadingCardImage)
+                          ? null
+                          : _addStation,
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            'Add Station',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                 ),
               ),
             ],
@@ -321,7 +485,9 @@ class _AddStationScreenState extends State<AddStationScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      validator: validator ?? (value) => value == null || value.trim().isEmpty ? 'Required' : null,
+      validator:
+          validator ??
+          (value) => value == null || value.trim().isEmpty ? 'Required' : null,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

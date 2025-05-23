@@ -12,6 +12,7 @@ class StationModel {
   final String openingHours;
   final double pricePerHour;
   final String logoUrl;
+  final String? cardImageUrl; // <-- add this
 
   StationModel({
     required this.id,
@@ -27,38 +28,45 @@ class StationModel {
     required this.openingHours,
     required this.pricePerHour,
     required this.logoUrl,
+    this.cardImageUrl, // <-- add this
   });
 
   int get totalPorts => slots2x + slots1x;
 
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'owner': owner,
-        'address': address,
-        'latitude': latitude,
-        'longitude': longitude,
-        'contactNumber': contactNumber,
-        'gmail': gmail,
-        'slots2x': slots2x,
-        'slots1x': slots1x,
-        'openingHours': openingHours,
-        'pricePerHour': pricePerHour,
-        'logoUrl': logoUrl,
-      };
+  factory StationModel.fromMap(Map<String, dynamic> map, String docId) {
+    return StationModel(
+      id: docId,
+      name: map['name'] ?? '',
+      owner: map['owner'] ?? '',
+      address: map['address'] ?? '',
+      latitude: (map['latitude'] as num).toDouble(),
+      longitude: (map['longitude'] as num).toDouble(),
+      contactNumber: map['contactNumber'] ?? '',
+      gmail: map['gmail'] ?? '',
+      slots2x: map['slots2x'] ?? 0,
+      slots1x: map['slots1x'] ?? 0,
+      openingHours: map['openingHours'] ?? '',
+      pricePerHour: (map['pricePerHour'] as num?)?.toDouble() ?? 0.0,
+      logoUrl: map['logoUrl'] ?? '',
+      cardImageUrl: map['cardImageUrl'],
+    );
+  }
 
-  factory StationModel.fromMap(Map<String, dynamic> map, String id) => StationModel(
-        id: id,
-        name: map['name'] ?? '',
-        owner: map['owner'] ?? '',
-        address: map['address'] ?? '',
-        latitude: (map['latitude'] as num).toDouble(),
-        longitude: (map['longitude'] as num).toDouble(),
-        contactNumber: map['contactNumber'] ?? '',
-        gmail: map['gmail'] ?? '',
-        slots2x: map['slots2x'] ?? 0,
-        slots1x: map['slots1x'] ?? 0,
-        openingHours: map['openingHours'] ?? '',
-        pricePerHour: (map['pricePerHour'] as num?)?.toDouble() ?? 0.0,
-        logoUrl: map['logoUrl'] ?? '',
-      );
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'owner': owner,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      'contactNumber': contactNumber,
+      'gmail': gmail,
+      'slots2x': slots2x,
+      'slots1x': slots1x,
+      'openingHours': openingHours,
+      'pricePerHour': pricePerHour,
+      'logoUrl': logoUrl,
+      'cardImageUrl': cardImageUrl,
+    };
+  }
 }

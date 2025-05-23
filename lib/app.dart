@@ -65,12 +65,17 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // Show splash screen while checking authentication state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SplashScreen();
         }
+        
+        // User is authenticated - go to home screen
         if (snapshot.hasData) {
           return const HomeScreen();
         }
+        
+        // User is not authenticated - show welcome screen
         return const WelcomeScreen();
       },
     );
