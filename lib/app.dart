@@ -51,7 +51,8 @@ class EcoEvRoot extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as String;
           return EditStationScreen(stationId: args);
         },
-        '/profile': (context) => const ProfileScreen(), // <-- Added profile route
+        '/profile':
+            (context) => const ProfileScreen(), // <-- Added profile route
       },
     );
   }
@@ -65,17 +66,14 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Show splash screen while checking authentication state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SplashScreen();
         }
-        
-        // User is authenticated - go to home screen
+
         if (snapshot.hasData) {
           return const HomeScreen();
         }
-        
-        // User is not authenticated - show welcome screen
+
         return const WelcomeScreen();
       },
     );

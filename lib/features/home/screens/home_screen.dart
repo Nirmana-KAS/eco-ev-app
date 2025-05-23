@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart'; // Only needed once at the top
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedChip = 0;
   final List<String> chips = ["Nearby", "Top Rated", "Popular", "Availability"];
 
-  // Define your colors here for easy updates
+  // UI colors
   final Color orange = const Color(0xFFFFA800);
   final Color green = const Color(0xFF138808);
   final Color ecoGreen = const Color(0xFF61B15A);
@@ -48,27 +47,16 @@ class _HomeScreenState extends State<HomeScreen> {
           return;
         }
       }
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
 
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         String area = '';
-        // Removed: if (place.name != null && place.name!.isNotEmpty) area += '${place.name}, ';
-        if (place.subLocality != null && place.subLocality!.isNotEmpty)
-          area += '${place.subLocality}, ';
-        if (place.locality != null && place.locality!.isNotEmpty)
-          area += '${place.locality}, ';
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty)
-          area += '${place.administrativeArea}, ';
-        if (place.country != null && place.country!.isNotEmpty)
-          area += place.country!;
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) area += '${place.subLocality}, ';
+        if (place.locality != null && place.locality!.isNotEmpty) area += '${place.locality}, ';
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) area += '${place.administrativeArea}, ';
+        if (place.country != null && place.country!.isNotEmpty) area += place.country!;
         area = area.trim();
         if (area.endsWith(',')) area = area.substring(0, area.length - 1);
 
@@ -101,8 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserName() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      final doc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         setState(() {
           _userName = doc.data()!['username'] ?? "";
@@ -119,55 +106,69 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           children: [
-            // GREETING MESSAGE
+            // GREETING + PROFILE PHOTO
             Padding(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 12.0),
-              child: Text(
-                '${getGreeting()}${_userName.isNotEmpty ? ' $_userName' : ''}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: black,
-                ),
+              padding: const EdgeInsets.only(top: 24, left: 4, right: 4, bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          getGreeting(),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: black,
+                          ),
+                        ),
+                        if (_userName.isNotEmpty)
+                          Text(
+                            _userName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: black,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                  _profilePhoto(context),
+                ],
               ),
             ),
 
-            // HEADER ROW: Location and Notifications
+            // SECOND ROW: Your Location + Notification button
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(Icons.location_on, color: green, size: 20),
                 const SizedBox(width: 8),
-                // The Expanded widget ensures the text wraps and never overflows!
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Your Location",
-                        style: TextStyle(fontSize: 13, color: darkGrey),
-                      ),
+                      Text("Your Location", style: TextStyle(fontSize: 13, color: darkGrey)),
                       Text(
                         _currentAddress,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: black,
-                          overflow:
-                              TextOverflow
-                                  .ellipsis, // Optional: adds "..." if too long
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2, // Wraps to 2 lines if needed
+                        maxLines: 2,
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: Icon(
-                    Icons.notifications_none_rounded,
-                    color: black,
-                    size: 28,
-                  ),
+                  icon: Icon(Icons.notifications_none_rounded, color: black, size: 28),
                   onPressed: () {},
                 ),
               ],
@@ -179,10 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                     decoration: BoxDecoration(
                       color: mediumGrey,
                       borderRadius: BorderRadius.circular(12),
@@ -196,10 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             decoration: InputDecoration(
                               hintText: "Search e-stations, city, etc",
                               border: InputBorder.none,
-                              hintStyle: TextStyle(
-                                color: darkGrey,
-                                fontSize: 15,
-                              ),
+                              hintStyle: TextStyle(color: darkGrey, fontSize: 15),
                               isDense: true,
                             ),
                             style: TextStyle(fontSize: 15, color: black),
@@ -240,8 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: mediumGrey,
                     labelStyle: TextStyle(
                       color: selected ? green : black,
-                      fontWeight:
-                          selected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                     ),
                     onSelected: (_) {
                       setState(() => _selectedChip = i);
@@ -252,28 +246,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // SECTION: E-Stations Nearby
+            // E-STATIONS NEARBY
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "E-Stations Nearby",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: black,
-                  ),
-                ),
+                Text("E-Stations Nearby", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: black)),
                 TextButton(
                   onPressed: () {},
-                  child: Text(
-                    "See all",
-                    style: TextStyle(
-                      color: green,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: Text("See all", style: TextStyle(color: green, fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -305,28 +285,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 18),
 
-            // SECTION: Recommendations
+            // RECOMMENDATIONS
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Our Recommendations",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: black,
-                  ),
-                ),
+                Text("Our Recommendations", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: black)),
                 TextButton(
                   onPressed: () {},
-                  child: Text(
-                    "See all",
-                    style: TextStyle(
-                      color: green,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: Text("See all", style: TextStyle(color: green, fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -341,13 +307,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // ADMIN DASHBOARD BUTTON (conditionally visible)
+            // ADMIN DASHBOARD BUTTON
             FutureBuilder<DocumentSnapshot>(
-              future:
-                  FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                      .get(),
+              future: FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const SizedBox();
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
@@ -358,69 +320,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.admin_panel_settings),
                       label: const Text("Admin Dashboard"),
                       onPressed: () => Navigator.pushNamed(context, '/admin'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
                     ),
                   );
                 }
                 return const SizedBox();
               },
             ),
-
-            // === DEBUG BUTTON: Remove after checking! ===
-            // ElevatedButton(
-            //   onPressed: () async {
-            //     final user = FirebaseAuth.instance.currentUser;
-            //     if (user != null) {
-            //       final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-            //       print("Current user UID: ${user.uid}");
-            //       print("Firestore user doc: ${doc.data()}");
-            //       ScaffoldMessenger.of(context).showSnackBar(
-            //         SnackBar(content: Text("UID: ${user.uid}\nRole: ${doc.data()?['role']}")),
-            //       );
-            //     }
-            //   },
-            //   child: const Text("Check Firestore UID/Role"),
-            // ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text.rich(
-                  TextSpan(
-                    text: "Don’t have an account? ",
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Color(0xFF484848),
-                    ),
-                    children: [
-                      TextSpan(
-                        text: "Register Now",
-                        style: const TextStyle(
-                          color: Color(0xFF138808),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          letterSpacing: 0.2,
-                        ),
-                        recognizer:
-                            TapGestureRecognizer()
-                              ..onTap = () {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  '/sign-up',
-                                );
-                              },
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                ),
-              ),
-            ),
           ],
-          // End of ListView children
         ),
       ),
 
@@ -430,36 +337,22 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (idx) {
           setState(() => _selectedTab = idx);
           if (idx == 3) {
-            // Profile tab
             Navigator.pushNamed(context, '/profile');
           }
-          // You can add navigation for other tabs here if needed
         },
         selectedItemColor: green,
         unselectedItemColor: darkGrey,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.ev_station_rounded),
-            label: "Stations",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_rounded),
-            label: "Booking",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.ev_station_rounded), label: "Stations"),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today_rounded), label: "Booking"),
+          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: "Profile"),
         ],
       ),
     );
   }
 
-  // E-Station Card Widget
+  // Station Card Widget (Update as per your dynamic model later!)
   Widget _stationCard({
     required String image,
     required bool isTop,
@@ -494,12 +387,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   topLeft: Radius.circular(18),
                   topRight: Radius.circular(18),
                 ),
-                child: Image(
-                  image:
-                      (image != null && image.isNotEmpty)
-                          ? NetworkImage(image)
-                          : const AssetImage('assets/charging_placeholder.jpg')
-                              as ImageProvider,
+                child: Image.asset(
+                  image,
                   height: 90,
                   width: 270,
                   fit: BoxFit.cover,
@@ -510,22 +399,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: green,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      "Top",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
+                    child: const Text("Top", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 ),
             ],
@@ -533,14 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              price,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: green,
-              ),
-            ),
+            child: Text(price, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: green)),
           ),
           const SizedBox(height: 3),
           Padding(
@@ -548,30 +420,18 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 Icon(Icons.flash_on, size: 16, color: orange),
-                Text(
-                  ' $speed  ',
-                  style: TextStyle(color: darkGrey, fontSize: 13),
-                ),
+                Text(' $speed  ', style: TextStyle(color: darkGrey, fontSize: 13)),
                 Icon(Icons.ev_station_rounded, size: 16, color: orange),
-                Text(
-                  ' $slots  ',
-                  style: TextStyle(color: darkGrey, fontSize: 13),
-                ),
+                Text(' $slots  ', style: TextStyle(color: darkGrey, fontSize: 13)),
                 Icon(Icons.bolt_rounded, size: 16, color: orange),
-                Text(
-                  ' $power',
-                  style: TextStyle(color: darkGrey, fontSize: 13),
-                ),
+                Text(' $power', style: TextStyle(color: darkGrey, fontSize: 13)),
               ],
             ),
           ),
           const SizedBox(height: 3),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              address,
-              style: TextStyle(fontSize: 12, color: darkGrey),
-            ),
+            child: Text(address, style: TextStyle(fontSize: 12, color: darkGrey)),
           ),
           const Spacer(),
           Padding(
@@ -583,10 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               onPressed: () {},
               child: const Text('Book Now'),
@@ -634,14 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: green,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  "Top",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
+                child: const Text("Top", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
             ),
           Positioned(
@@ -660,6 +510,48 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // User Profile Photo Widget
+  Widget _profilePhoto(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || !(snapshot.data!.data() is Map)) {
+          return _defaultAvatar();
+        }
+        final data = snapshot.data!.data() as Map<String, dynamic>;
+        final photoUrl = data['photoUrl'] as String?;
+        return GestureDetector(
+          onTap: () {
+            Navigator.pushNamed(context, '/profile');
+          },
+          child: CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                ? NetworkImage(photoUrl)
+                : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _defaultAvatar() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/profile');
+      },
+      child: CircleAvatar(
+        radius: 22,
+        backgroundColor: Colors.grey[300],
+        backgroundImage: const AssetImage('assets/profile_placeholder.png'),
       ),
     );
   }
