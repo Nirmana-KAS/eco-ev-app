@@ -35,42 +35,53 @@ class _EditStationScreenState extends State<EditStationScreen> {
   bool _isLoading = false;
   bool _isLoadingData = true;
 
-  // Map initial position (Sri Lanka)
+  // Card image variables
+  File? _cardImage;
+  bool _isUploadingCardImage = false;
+  String? _uploadedCardImageUrl;
+  String? _existingCardImageUrl;
+
   static const LatLng _initPosition = LatLng(7.0, 80.0);
 
   @override
   void initState() {
     super.initState();
-    _loadStationData();
+    _loadStation();
   }
 
-  Future<void> _loadStationData() async {
+  Future<void> _loadStation() async {
     final doc = await FirebaseFirestore.instance.collection('stations').doc(widget.stationId).get();
-    if (doc.exists) {
+    if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
-      _nameController.text = data['name'] ?? '';
-      _ownerController.text = data['owner'] ?? '';
-      _addressController.text = data['address'] ?? '';
-      _contactController.text = data['contactNumber'] ?? '';
-      _gmailController.text = data['gmail'] ?? '';
-      _slots2xController.text = data['slots2x']?.toString() ?? '';
-      _slots1xController.text = data['slots1x']?.toString() ?? '';
-      _priceController.text = data['pricePerHour']?.toString() ?? '';
-      _currentLogoUrl = data['logoUrl'] ?? '';
-      _selectedLatLng = LatLng(
-        (data['latitude'] as num).toDouble(),
-        (data['longitude'] as num).toDouble(),
-      );
-      // Parse opening hours like "8:00 AM - 5:00 PM"
-      if (data['openingHours'] != null) {
-        final times = (data['openingHours'] as String).split(' - ');
-        if (times.length == 2) {
-          _openTime = _parseTimeOfDay(times[0]);
-          _closeTime = _parseTimeOfDay(times[1]);
+      setState(() {
+        _existingCardImageUrl = data['cardImageUrl'] ?? null;
+        _nameController.text = data['name'] ?? '';
+        _ownerController.text = data['owner'] ?? '';
+        _addressController.text = data['address'] ?? '';
+        _contactController.text = data['contactNumber'] ?? '';
+        _gmailController.text = data['gmail'] ?? '';
+        _slots2xController.text = data['slots2x']?.toString() ?? '';
+        _slots1xController.text = data['slots1x']?.toString() ?? '';
+        _priceController.text = data['pricePerHour']?.toString() ?? '';
+        _currentLogoUrl = data['logoUrl'] ?? '';
+        _selectedLatLng = LatLng(
+          (data['latitude'] as num).toDouble(),
+          (data['longitude'] as num).toDouble(),
+        );
+        if (data['openingHours'] != null) {
+          final times = (data['openingHours'] as String).split(' - ');
+          if (times.length == 2) {
+            _openTime = _parseTimeOfDay(times[0]);
+            _closeTime = _parseTimeOfDay(times[1]);
+          }
         }
-      }
+        _isLoadingData = false;
+      });
+    } else {
+      setState(() {
+        _isLoadingData = false;
+      });
     }
-    setState(() => _isLoadingData = false);
   }
 
   TimeOfDay? _parseTimeOfDay(String str) {
@@ -100,6 +111,27 @@ class _EditStationScreenState extends State<EditStationScreen> {
     return await ref.getDownloadURL();
   }
 
+  // Card image picker & uploader
+  Future<void> _pickCardImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (pickedFile != null) {
+      setState(() => _cardImage = File(pickedFile.path));
+    }
+  }
+
+  Future<String?> _uploadCardImage(String stationId) async {
+    if (_cardImage == null) return null;
+    setState(() => _isUploadingCardImage = true);
+    try {
+      final ref = FirebaseStorage.instance.ref().child('station_card_images/$stationId.jpg');
+      await ref.putFile(_cardImage!);
+      return await ref.getDownloadURL();
+    } finally {
+      setState(() => _isUploadingCardImage = false);
+    }
+  }
+
   String _formatTimeOfDay(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
@@ -123,7 +155,12 @@ class _EditStationScreenState extends State<EditStationScreen> {
 
       String openingHours = "${_formatTimeOfDay(_openTime!)} - ${_formatTimeOfDay(_closeTime!)}";
 
-      await FirebaseFirestore.instance.collection('stations').doc(widget.stationId).update({
+      String? cardImageUrl;
+      if (_cardImage != null) {
+        cardImageUrl = await _uploadCardImage(widget.stationId);
+      }
+
+      Map<String, dynamic> updateData = {
         'name': _nameController.text.trim(),
         'owner': _ownerController.text.trim(),
         'address': _addressController.text.trim(),
@@ -136,7 +173,15 @@ class _EditStationScreenState extends State<EditStationScreen> {
         'openingHours': openingHours,
         'pricePerHour': double.parse(_priceController.text.trim()),
         'logoUrl': imageUrl,
-      });
+      };
+      if (cardImageUrl != null) {
+        updateData['cardImageUrl'] = cardImageUrl;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('stations')
+          .doc(widget.stationId)
+          .update(updateData);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -173,7 +218,7 @@ class _EditStationScreenState extends State<EditStationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double avatarRadius = 48;
+    final double avatarRadius = 56;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Charging Station'),
@@ -186,31 +231,41 @@ class _EditStationScreenState extends State<EditStationScreen> {
                 key: _formKey,
                 child: ListView(
                   children: [
+                    // ========= Station Logo ==========
+                    const Text(
+                      "Edit Station Logo",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
                     Center(
                       child: Stack(
                         alignment: Alignment.bottomRight,
                         children: [
                           CircleAvatar(
                             radius: avatarRadius,
-                            backgroundColor: Colors.grey[300],
+                            backgroundColor: Colors.grey[200],
                             backgroundImage: _selectedImage != null
                                 ? FileImage(_selectedImage!)
                                 : (_currentLogoUrl != null && _currentLogoUrl!.isNotEmpty
                                     ? NetworkImage(_currentLogoUrl!)
                                     : const AssetImage('assets/station_icon.png') as ImageProvider),
+                            child: _selectedImage == null && (_currentLogoUrl == null || _currentLogoUrl!.isEmpty)
+                                ? Icon(Icons.ev_station, size: 40, color: Colors.grey[400])
+                                : null,
                           ),
                           Positioned(
-                            bottom: 4,
-                            right: 4,
+                            bottom: 8,
+                            right: 8,
                             child: InkWell(
                               onTap: _pickImage,
                               child: Container(
                                 padding: const EdgeInsets.all(7),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.7),
+                                  color: Colors.black87,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                child: const Icon(Icons.edit, color: Colors.white, size: 18),
                               ),
                             ),
                           ),
@@ -218,6 +273,66 @@ class _EditStationScreenState extends State<EditStationScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
+
+                    // ========= Station Card Image ==========
+                    const Text(
+                      "Edit Station Card Image",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 220,
+                            height: 110,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(18),
+                              image: _cardImage != null
+                                  ? DecorationImage(
+                                      image: FileImage(_cardImage!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : (_existingCardImageUrl != null && _existingCardImageUrl!.isNotEmpty)
+                                      ? DecorationImage(
+                                          image: NetworkImage(_existingCardImageUrl!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                            ),
+                            child: (_cardImage == null && (_existingCardImageUrl == null || _existingCardImageUrl!.isEmpty))
+                                ? Icon(Icons.image, size: 50, color: Colors.grey[400])
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: InkWell(
+                              onTap: _pickCardImage,
+                              child: Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: Colors.black87,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: _isUploadingCardImage
+                                    ? const SizedBox(
+                                        width: 18, height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Icon(Icons.edit, color: Colors.white, size: 18),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // ... Other fields (text fields, map, slots, etc)
                     _buildTextField(_nameController, 'Station Name', TextInputType.text),
                     const SizedBox(height: 14),
                     _buildTextField(_ownerController, 'Owner\'s Name', TextInputType.text),
@@ -300,7 +415,7 @@ class _EditStationScreenState extends State<EditStationScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _updateStation,
+                        onPressed: (_isLoading || _isUploadingCardImage) ? null : _updateStation,
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text('Update Station', style: TextStyle(fontWeight: FontWeight.bold)),

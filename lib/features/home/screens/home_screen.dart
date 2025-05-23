@@ -48,17 +48,27 @@ class _HomeScreenState extends State<HomeScreen> {
           return;
         }
       }
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
 
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         String area = '';
         // Removed: if (place.name != null && place.name!.isNotEmpty) area += '${place.name}, ';
-        if (place.subLocality != null && place.subLocality!.isNotEmpty) area += '${place.subLocality}, ';
-        if (place.locality != null && place.locality!.isNotEmpty) area += '${place.locality}, ';
-        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) area += '${place.administrativeArea}, ';
-        if (place.country != null && place.country!.isNotEmpty) area += place.country!;
+        if (place.subLocality != null && place.subLocality!.isNotEmpty)
+          area += '${place.subLocality}, ';
+        if (place.locality != null && place.locality!.isNotEmpty)
+          area += '${place.locality}, ';
+        if (place.administrativeArea != null &&
+            place.administrativeArea!.isNotEmpty)
+          area += '${place.administrativeArea}, ';
+        if (place.country != null && place.country!.isNotEmpty)
+          area += place.country!;
         area = area.trim();
         if (area.endsWith(',')) area = area.substring(0, area.length - 1);
 
@@ -91,7 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserName() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         setState(() {
           _userName = doc.data()!['username'] ?? "";
@@ -142,7 +153,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: black,
-                          overflow: TextOverflow.ellipsis, // Optional: adds "..." if too long
+                          overflow:
+                              TextOverflow
+                                  .ellipsis, // Optional: adds "..." if too long
                         ),
                         maxLines: 2, // Wraps to 2 lines if needed
                       ),
@@ -150,7 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.notifications_none_rounded, color: black, size: 28),
+                  icon: Icon(
+                    Icons.notifications_none_rounded,
+                    color: black,
+                    size: 28,
+                  ),
                   onPressed: () {},
                 ),
               ],
@@ -372,7 +389,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text.rich(
                   TextSpan(
                     text: "Don’t have an account? ",
-                    style: const TextStyle(fontSize: 15, color: Color(0xFF484848)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF484848),
+                    ),
                     children: [
                       TextSpan(
                         text: "Register Now",
@@ -382,10 +402,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 15,
                           letterSpacing: 0.2,
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.pushReplacementNamed(context, '/sign-up');
-                          },
+                        recognizer:
+                            TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/sign-up',
+                                );
+                              },
                       ),
                     ],
                   ),
@@ -471,9 +495,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   topRight: Radius.circular(18),
                 ),
                 child: Image(
-                  image: (image != null && image.isNotEmpty)
-                      ? NetworkImage(image)
-                      : const AssetImage('assets/charging_placeholder.jpg') as ImageProvider,
+                  image:
+                      (image != null && image.isNotEmpty)
+                          ? NetworkImage(image)
+                          : const AssetImage('assets/charging_placeholder.jpg')
+                              as ImageProvider,
                   height: 90,
                   width: 270,
                   fit: BoxFit.cover,
