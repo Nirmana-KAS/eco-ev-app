@@ -30,12 +30,12 @@ class WelcomeScreen extends StatelessWidget {
                   height: 54,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF61B15A),
+                      backgroundColor: const Color(0xFF007800), // <-- Changed to #007800
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 8, // <-- 3D effect
-                      shadowColor: Colors.green.withOpacity(0.4), // <-- Soft green shadow
+                      shadowColor: const Color(0xFF007800).withOpacity(0.4), // <-- Soft #007800 shadow
                     ),
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/sign-in');
@@ -59,14 +59,14 @@ class WelcomeScreen extends StatelessWidget {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
-                        color: Color(0xFF61B15A),
+                        color: Color(0x66007800), // <-- Reduced opacity for #007800 (40% opacity)
                         width: 2,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      elevation: 8, // <-- 3D effect for OutlinedButton
-                      shadowColor: Colors.green.withOpacity(0.4), // <-- Soft green shadow
+                      elevation: 8,
+                      shadowColor: const Color(0xFF007800).withOpacity(0.4),
                       backgroundColor: Colors.white,
                     ),
                     onPressed: () {
@@ -76,7 +76,7 @@ class WelcomeScreen extends StatelessWidget {
                       'Register',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Color(0xFF61B15A),
+                        color: Color(0xFF007800),
                       ),
                     ),
                   ),
