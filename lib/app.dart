@@ -14,6 +14,8 @@ import 'features/admin/screens/admin_dashboard_screen.dart'; // <-- Add this imp
 import 'features/admin/screens/add_station_screen.dart'; // <-- Add this import if you have the file
 import 'features/admin/screens/edit_station_screen.dart'; // <-- Add this import if you have the file
 import 'features/profile/screens/profile_screen.dart';
+import 'features/about/screens/about_screen.dart'; // <-- Add this import for AboutScreen
+import 'features/feedback/screens/feedback_screen.dart'; // <-- Add this import if you have the file
 
 // Example fallback theme definition (remove if already defined in theme.dart)
 final ThemeData ecoEvTheme = ThemeData(
@@ -42,17 +44,15 @@ class EcoEvRoot extends StatelessWidget {
         '/password-changed': (context) => const PasswordChangedScreen(),
         '/home': (context) => const HomeScreen(),
         '/map': (context) => const MapScreen(),
-        '/admin':
-            (context) => const AdminDashboardScreen(), // <-- Added admin route
-        '/add-station':
-            (context) =>
-                const AddStationScreen(), // <-- Added add-station route
+        '/admin': (context) => const AdminDashboardScreen(),
+        '/add-station': (context) => const AddStationScreen(),
         '/edit-station': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as String;
           return EditStationScreen(stationId: args);
         },
-        '/profile':
-            (context) => const ProfileScreen(), // <-- Added profile route
+        '/profile': (context) => const ProfileScreen(),
+        '/about': (context) => const AboutScreen(), // <-- Added AboutScreen route
+        '/feedback': (context) => const FeedbackScreen(), // <-- Add this line
       },
     );
   }

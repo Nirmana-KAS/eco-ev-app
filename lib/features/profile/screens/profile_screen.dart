@@ -197,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               right: 4,
                               child: InkWell(
                                 onTap: _isUploading ? null : _pickAndUploadImage,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(25),
                                 child: Container(
                                   padding: const EdgeInsets.all(7),
                                   decoration: BoxDecoration(
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                         margin: EdgeInsets.zero,
                         child: Padding(
@@ -315,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 backgroundColor: Colors.deepPurple,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), // Changed to 25
                                 elevation: 8,
                               ),
                               onPressed: _showAboutUsDialog,
@@ -330,10 +330,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 backgroundColor: Colors.green[700],
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), // Changed to 25
                                 elevation: 8,
                               ),
-                              onPressed: _showFeedbackDialog,
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/feedback');
+                              },
                             ),
                           ),
                         ],
