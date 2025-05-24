@@ -308,30 +308,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: ElevatedButton.icon(
-                              icon: const Icon(Icons.info_outline, color: Colors.white),
-                              label: const Text("About Us"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
-                                foregroundColor: Colors.white,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.info_outline, color: Color(0xFF007800)),
+                              label: const Text(
+                                "About Us",
+                                style: TextStyle(color: Color(0xFF007800)),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF007800), width: 2),
                                 padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), // Changed to 25
-                                elevation: 8,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                               ),
                               onPressed: _showAboutUsDialog,
                             ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
-                            child: ElevatedButton.icon(
-                              icon: const Icon(Icons.feedback_outlined, color: Colors.white),
-                              label: const Text("Feedback"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green[700],
-                                foregroundColor: Colors.white,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.feedback_outlined, color: Color(0xFF007800)),
+                              label: const Text(
+                                "Feedback",
+                                style: TextStyle(color: Color(0xFF007800)),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF007800), width: 2),
                                 padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), // Changed to 25
-                                elevation: 8,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                               ),
                               onPressed: () {
                                 Navigator.pushNamed(context, '/feedback');

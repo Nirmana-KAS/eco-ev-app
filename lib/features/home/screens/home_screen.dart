@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:eco_ev_app/features/station/screens/station_search_delegate.dart';
+import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedTab = 0;
   int _selectedChip = 0;
   final List<String> chips = ["Nearby", "Top Rated", "Popular", "Availability"];
+  String _searchQuery = '';
 
   // UI colors
   final Color orange = const Color(0xFFFFA800);
@@ -47,16 +51,25 @@ class _HomeScreenState extends State<HomeScreen> {
           return;
         }
       }
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         String area = '';
-        if (place.subLocality != null && place.subLocality!.isNotEmpty) area += '${place.subLocality}, ';
-        if (place.locality != null && place.locality!.isNotEmpty) area += '${place.locality}, ';
-        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) area += '${place.administrativeArea}, ';
-        if (place.country != null && place.country!.isNotEmpty) area += place.country!;
+        if (place.subLocality != null && place.subLocality!.isNotEmpty)
+          area += '${place.subLocality}, ';
+        if (place.locality != null && place.locality!.isNotEmpty)
+          area += '${place.locality}, ';
+        if (place.administrativeArea != null &&
+            place.administrativeArea!.isNotEmpty)
+          area += '${place.administrativeArea}, ';
+        if (place.country != null && place.country!.isNotEmpty)
+          area += place.country!;
         area = area.trim();
         if (area.endsWith(',')) area = area.substring(0, area.length - 1);
 
@@ -89,7 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserName() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         setState(() {
           _userName = doc.data()!['username'] ?? "";
@@ -108,7 +122,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // GREETING + PROFILE PHOTO
             Padding(
-              padding: const EdgeInsets.only(top: 24, left: 4, right: 4, bottom: 8),
+              padding: const EdgeInsets.only(
+                top: 24,
+                left: 4,
+                right: 4,
+                bottom: 8,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -143,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // SECOND ROW: Your Location + Notification button
+            // Location + Notification button
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -153,7 +172,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Your Location", style: TextStyle(fontSize: 13, color: darkGrey)),
+                      Text(
+                        "Your Location",
+                        style: TextStyle(fontSize: 13, color: darkGrey),
+                      ),
                       Text(
                         _currentAddress,
                         style: TextStyle(
@@ -168,131 +190,227 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.notifications_none_rounded, color: black, size: 28),
+                  icon: Icon(
+                    Icons.notifications_none_rounded,
+                    color: black,
+                    size: 28,
+                  ),
                   onPressed: () {},
                 ),
               ],
             ),
             const SizedBox(height: 8),
 
-            // SEARCH BAR & FILTER
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: mediumGrey,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, color: darkGrey, size: 22),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: "Search e-stations, city, etc",
-                              border: InputBorder.none,
-                              hintStyle: TextStyle(color: darkGrey, fontSize: 15),
-                              isDense: true,
-                            ),
-                            style: TextStyle(fontSize: 15, color: black),
-                          ),
+            // Search Bar (No filter icon)
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                await showSearch(
+                  context: context,
+                  delegate: StationSearchDelegate(),
+                );
+                // No need to handle result since you navigate on tap
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: mediumGrey,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: darkGrey, size: 22),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _searchQuery.isEmpty
+                            ? "Search e-stations, city, etc"
+                            : _searchQuery,
+                        style: TextStyle(
+                          color: darkGrey,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
                         ),
-                      ],
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // FILTER CHIPS
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: chips.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final selected = i == _selectedChip;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedChip = i),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            selected
+                                ? const Color(0xFFE1F5E5)
+                                : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(22),
+                        border:
+                            selected
+                                ? Border.all(
+                                  color: Colors.teal[600]!,
+                                  width: 1.4,
+                                )
+                                : Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                        boxShadow:
+                            selected
+                                ? [
+                                  BoxShadow(
+                                    color: Colors.teal.withOpacity(0.06),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                                : [],
+                      ),
+                      child: Text(
+                        chips[i],
+                        style: TextStyle(
+                          color: selected ? Colors.teal[700] : Colors.grey[600],
+                          fontWeight:
+                              selected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            // ---- E-STATIONS NEARBY TITLE ----
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "E-Stations Nearby",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: mediumGrey,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.tune_rounded, color: green),
-                    onPressed: () {},
+                TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    "See all",
+                    style: TextStyle(
+                      color: Colors.teal[600],
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
 
-            // TAB BAR (Chips)
+            // --- Firestore-powered Station Cards ---
             SizedBox(
-              height: 34,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: chips.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, i) {
-                  final selected = i == _selectedChip;
-                  return ChoiceChip(
-                    label: Text(chips[i]),
-                    selected: selected,
-                    selectedColor: green.withOpacity(0.15),
-                    backgroundColor: mediumGrey,
-                    labelStyle: TextStyle(
-                      color: selected ? green : black,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    onSelected: (_) {
-                      setState(() => _selectedChip = i);
+              height: 240,
+              child: StreamBuilder<QuerySnapshot>(
+                stream:
+                    FirebaseFirestore.instance
+                        .collection('stations')
+                        .orderBy('createdAt', descending: true)
+                        .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final docs = snapshot.data!.docs;
+
+                  // Apply filtering for search
+                  final filteredDocs =
+                      docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final name =
+                            (data['name'] ?? '').toString().toLowerCase();
+                        final address =
+                            (data['address'] ?? '').toString().toLowerCase();
+                        final locality =
+                            (data['locality'] ?? '').toString().toLowerCase();
+                        final district =
+                            (data['district'] ?? '').toString().toLowerCase();
+                        return _searchQuery.isEmpty ||
+                            name.contains(_searchQuery) ||
+                            address.contains(_searchQuery) ||
+                            locality.contains(_searchQuery) ||
+                            district.contains(_searchQuery);
+                      }).toList();
+
+                  if (filteredDocs.isEmpty) {
+                    return const Center(
+                      child: Text("No matching stations found."),
+                    );
+                  }
+
+                  return ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: filteredDocs.length,
+                    itemBuilder: (context, i) {
+                      final data =
+                          filteredDocs[i].data() as Map<String, dynamic>;
+                      return _stationCardFigma(
+                        image: data['cardImageUrl'] ?? '',
+                        isTop: i == 0,
+                        price: 'Rs.${data['pricePerHour']}/hour',
+                        speed: '${data['slots2x']}x Speed',
+                        slots: '${data['slots2x']}',
+                        address: data['address'] ?? '',
+                      );
                     },
                   );
                 },
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
-            // E-STATIONS NEARBY
+            // Recommendations (you can further upgrade to use Firestore here)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("E-Stations Nearby", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: black)),
-                TextButton(
-                  onPressed: () {},
-                  child: Text("See all", style: TextStyle(color: green, fontSize: 15, fontWeight: FontWeight.bold)),
+                Text(
+                  "Our Recommendations",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: black,
+                  ),
                 ),
-              ],
-            ),
-            SizedBox(
-              height: 200,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _stationCard(
-                    image: 'assets/charging1.jpg',
-                    isTop: true,
-                    price: 'Rs.500/hour',
-                    speed: '2x Speed',
-                    slots: '10',
-                    power: '700 kW',
-                    address: 'High-Level Road, Nugegoda',
-                  ),
-                  _stationCard(
-                    image: 'assets/charging2.jpg',
-                    isTop: true,
-                    price: 'Rs.500/hour',
-                    speed: '2x Speed',
-                    slots: '8',
-                    power: '500 kW',
-                    address: 'High-Level Road, Kandy',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            // RECOMMENDATIONS
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Our Recommendations", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: black)),
                 TextButton(
                   onPressed: () {},
-                  child: Text("See all", style: TextStyle(color: green, fontSize: 15, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    "See all",
+                    style: TextStyle(
+                      color: green,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -309,7 +427,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // ADMIN DASHBOARD BUTTON
             FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get(),
+              future:
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .get(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const SizedBox();
                 final data = snapshot.data!.data() as Map<String, dynamic>?;
@@ -320,7 +442,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.admin_panel_settings),
                       label: const Text("Admin Dashboard"),
                       onPressed: () => Navigator.pushNamed(context, '/admin'),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                      ),
                     ),
                   );
                 }
@@ -343,110 +467,188 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: green,
         unselectedItemColor: darkGrey,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.ev_station_rounded), label: "Stations"),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today_rounded), label: "Booking"),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: "Profile"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded),
+            label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.ev_station_rounded),
+            label: "Stations",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today_rounded),
+            label: "Booking",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: "Profile",
+          ),
         ],
       ),
     );
   }
 
-  // Station Card Widget (Update as per your dynamic model later!)
-  Widget _stationCard({
+  // Figma-style Station Card Widget
+  Widget _stationCardFigma({
     required String image,
     required bool isTop,
     required String price,
     required String speed,
     required String slots,
-    required String power,
     required String address,
   }) {
     return Container(
-      width: 270,
-      margin: const EdgeInsets.only(right: 16),
+      width: 185,
+      margin: const EdgeInsets.only(right: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: mediumGrey.withOpacity(0.4),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Colors.grey.withOpacity(0.13),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image + Top badge
+          // Image and badge
           Stack(
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
+                  topLeft: Radius.circular(22),
+                  topRight: Radius.circular(22),
                 ),
-                child: Image.asset(
-                  image,
-                  height: 90,
-                  width: 270,
-                  fit: BoxFit.cover,
-                ),
+                child:
+                    image.isNotEmpty
+                        ? Image.network(
+                          image,
+                          height: 95,
+                          width: 185,
+                          fit: BoxFit.cover,
+                        )
+                        : Container(
+                          height: 95,
+                          width: 185,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.ev_station,
+                            size: 38,
+                            color: Colors.grey,
+                          ),
+                        ),
               ),
               if (isTop)
                 Positioned(
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: green,
-                      borderRadius: BorderRadius.circular(10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 3,
                     ),
-                    child: const Text("Top", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.88),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      "Top",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(price, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: green)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              price,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF30B27C),
+              ),
+            ),
           ),
-          const SizedBox(height: 3),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
             child: Row(
               children: [
-                Icon(Icons.flash_on, size: 16, color: orange),
-                Text(' $speed  ', style: TextStyle(color: darkGrey, fontSize: 13)),
-                Icon(Icons.ev_station_rounded, size: 16, color: orange),
-                Text(' $slots  ', style: TextStyle(color: darkGrey, fontSize: 13)),
-                Icon(Icons.bolt_rounded, size: 16, color: orange),
-                Text(' $power', style: TextStyle(color: darkGrey, fontSize: 13)),
+                Icon(Icons.flash_on, color: Colors.grey[600], size: 15),
+                const SizedBox(width: 3),
+                Text(
+                  speed,
+                  style: TextStyle(color: Colors.black54, fontSize: 12),
+                ),
+                const SizedBox(width: 10),
+                Icon(Icons.ev_station, color: Colors.grey[600], size: 15),
+                const SizedBox(width: 3),
+                Text(
+                  slots,
+                  style: TextStyle(color: Colors.black54, fontSize: 12),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 3),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(address, style: TextStyle(fontSize: 12, color: darkGrey)),
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: green,
-                minimumSize: const Size(double.infinity, 38),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: Colors.teal[400], size: 14),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(
+                    address,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(50, 22),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    "Direction",
+                    style: TextStyle(
+                      color: Colors.teal[700],
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF30B27C),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  elevation: 2,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                onPressed: () {},
+                child: const Text(
+                  'Book Now',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                ),
               ),
-              onPressed: () {},
-              child: const Text('Book Now'),
             ),
           ),
         ],
@@ -491,7 +693,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: green,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text("Top", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                child: const Text(
+                  "Top",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ),
           Positioned(
@@ -517,10 +726,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // User Profile Photo Widget
   Widget _profilePhoto(BuildContext context) {
     return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .get(),
+      future:
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || !(snapshot.data!.data() is Map)) {
           return _defaultAvatar();
@@ -534,9 +744,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: CircleAvatar(
             radius: 22,
             backgroundColor: Colors.grey[300],
-            backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                ? NetworkImage(photoUrl)
-                : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
+            backgroundImage:
+                (photoUrl != null && photoUrl.isNotEmpty)
+                    ? NetworkImage(photoUrl)
+                    : const AssetImage('assets/profile_placeholder.png')
+                        as ImageProvider,
           ),
         );
       },

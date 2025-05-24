@@ -58,8 +58,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final green = const Color(0xFF138808);
-    final deepPurple = Colors.deepPurple;
+    final green = const Color(0xFF007800);
+    final deepPurple = const Color(0xFF007800);
 
     return Scaffold(
       appBar: AppBar(
