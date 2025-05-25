@@ -7,6 +7,8 @@ import 'package:eco_ev_app/data/services/notification_service.dart';
 import 'package:eco_ev_app/app.dart';
 import 'firebase_options.dart';
 
+// DO NOT PUT IMPORTS AFTER THIS POINT
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -29,28 +31,20 @@ class _EcoEvEntryState extends State<EcoEvEntry> {
   }
 
   void _checkForEmailLink() async {
-    final PendingDynamicLinkData? data =
-        await FirebaseDynamicLinks.instance.getInitialLink();
+    final PendingDynamicLinkData? data = await FirebaseDynamicLinks.instance.getInitialLink();
     final Uri? deepLink = data?.link;
     if (deepLink != null) {
       final prefs = await SharedPreferences.getInstance();
       final String? email = prefs.getString('emailForSignIn');
       if (email != null) {
-        final error = await AuthService.signInWithEmailLink(
-          email,
-          deepLink.toString(),
-        );
+        final error = await AuthService.signInWithEmailLink(email, deepLink.toString());
         if (error == null) {
           if (mounted) {
-            Navigator.of(
-              context,
-            ).pushNamedAndRemoveUntil('/home', (route) => false);
+            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
           }
         } else {
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(error)));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
           }
         }
       } else {
@@ -69,19 +63,6 @@ class _EcoEvEntryState extends State<EcoEvEntry> {
   }
 }
 
-class NotificationButton extends StatelessWidget {
-  const NotificationButton({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () async {
-        await NotificationService.showNotification(
-          'Your Title',
-          'Your body message',
-        );
-      },
-      child: const Text('Show Notification'),
-    );
-  }
-}
+// DO NOT DEFINE NotificationService HERE.
+// Leave it in: lib/data/services/notification_service.dart

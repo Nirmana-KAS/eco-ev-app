@@ -1,10 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; // <-- Add this for better date formatting
+import 'package:intl/intl.dart';
 
-class NotificationScreen extends StatelessWidget {
-  const NotificationScreen({super.key});
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({Key? key}) : super(key: key);
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _markNotificationsAsSeen();
+  }
+
+  Future<void> _markNotificationsAsSeen() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final query = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: uid)
+          .where('seen', isEqualTo: false)
+          .get();
+      for (final doc in query.docs) {
+        doc.reference.update({'seen': true});
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,12 +37,11 @@ class NotificationScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications'), centerTitle: true),
       body: StreamBuilder<QuerySnapshot>(
-        stream:
-            FirebaseFirestore.instance
-                .collection('notifications')
-                .where('userId', isEqualTo: uid)
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('notifications')
+            .where('userId', isEqualTo: uid)
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

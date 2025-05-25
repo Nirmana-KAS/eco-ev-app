@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:eco_ev_app/data/services/notification_service.dart';
+
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/screens/welcome_screen.dart';
 import 'features/auth/screens/sign_in_screen.dart';
@@ -11,16 +11,16 @@ import 'features/auth/screens/create_new_password_screen.dart';
 import 'features/auth/screens/password_changed_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/map/screens/map_screen.dart';
-import 'features/admin/screens/admin_dashboard_screen.dart'; // <-- Add this import
-import 'features/admin/screens/add_station_screen.dart'; // <-- Add this import if you have the file
-import 'features/admin/screens/edit_station_screen.dart'; // <-- Add this import if you have the file
+import 'features/admin/screens/admin_dashboard_screen.dart';
+import 'features/admin/screens/add_station_screen.dart';
+import 'features/admin/screens/edit_station_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
-import 'features/about/screens/about_screen.dart'; // <-- Add this import for AboutScreen
-import 'features/feedback/screens/feedback_screen.dart'; // <-- Add this import if you have the file
-import 'features/booking/screens/booking_history_screen.dart'; // <-- Add this import if you have the file
-import 'features/notifications/screens/notification_screen.dart'; // <-- Add this import if you have the file
+import 'features/about/screens/about_screen.dart';
+import 'features/feedback/screens/feedback_screen.dart';
+import 'features/booking/screens/booking_history_screen.dart';
+import 'features/notifications/screens/notification_screen.dart';
 
-// Example fallback theme definition (remove if already defined in theme.dart)
+// Theme setup
 final ThemeData ecoEvTheme = ThemeData(
   primarySwatch: Colors.green,
   visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -34,7 +34,7 @@ class EcoEvRoot extends StatelessWidget {
     return MaterialApp(
       title: 'ECO EV',
       debugShowCheckedModeBanner: false,
-      theme: ecoEvTheme, // <<--- Use your theme here
+      theme: ecoEvTheme,
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthGate(),
@@ -54,12 +54,10 @@ class EcoEvRoot extends StatelessWidget {
           return EditStationScreen(stationId: args);
         },
         '/profile': (context) => const ProfileScreen(),
-        '/about':
-            (context) => const AboutScreen(), // <-- Added AboutScreen route
-        '/feedback': (context) => const FeedbackScreen(), // <-- Add this line
-        '/booking-history':
-            (context) => const BookingHistoryScreen(), // <-- Add this line
-        '/notifications': (_) => NotificationScreen(), // <-- Add this line
+        '/about': (context) => const AboutScreen(),
+        '/feedback': (context) => const FeedbackScreen(),
+        '/booking-history': (context) => const BookingHistoryScreen(),
+        '/notifications': (context) => const NotificationScreen(),
       },
     );
   }
@@ -76,19 +74,11 @@ class AuthGate extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SplashScreen();
         }
-
         if (snapshot.hasData) {
           return const HomeScreen();
         }
-
         return const WelcomeScreen();
       },
     );
   }
-}
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(); // Add this!
-  runApp(const EcoEvRoot());
 }

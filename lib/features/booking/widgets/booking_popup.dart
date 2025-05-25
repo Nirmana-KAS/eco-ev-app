@@ -159,9 +159,9 @@ class _BookingPopupState extends State<BookingPopup> {
 
       final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
       if (userId.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('User not logged in')));
         setState(() => _booking = false);
         return;
       }
@@ -188,11 +188,12 @@ class _BookingPopupState extends State<BookingPopup> {
 
       // Add notification to Firestore
       await FirebaseFirestore.instance.collection('notifications').add({
-        'userId': userId,
+        'userId': userId, // Make sure this is the current user's UID
         'title': 'Booking Confirmed',
-        'body': 'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
-        'isRead': false,
+        'body':
+            'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
         'createdAt': FieldValue.serverTimestamp(),
+        'seen': false, // This makes it "new" for notification bell
       });
 
       // Local notification
@@ -203,12 +204,14 @@ class _BookingPopupState extends State<BookingPopup> {
 
       if (mounted) {
         Navigator.pop(context, true); // Close popup
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Booking successful!')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Booking successful!')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Booking failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Booking failed: $e')));
     } finally {
       setState(() => _booking = false);
     }
