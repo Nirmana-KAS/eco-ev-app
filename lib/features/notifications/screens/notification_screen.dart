@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({Key? key}) : super(key: key);
+  const NotificationScreen({super.key});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -14,21 +14,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    _markNotificationsAsSeen();
+    _markAllNotificationsAsSeen();
   }
 
-  Future<void> _markNotificationsAsSeen() async {
+  void _markAllNotificationsAsSeen() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      final query = await FirebaseFirestore.instance
-          .collection('notifications')
-          .where('userId', isEqualTo: uid)
-          .where('seen', isEqualTo: false)
-          .get();
-      for (final doc in query.docs) {
-        doc.reference.update({'seen': true});
-      }
+    if (uid == null) return;
+    final batch = FirebaseFirestore.instance.batch();
+    final snap = await FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: uid)
+        .where('seen', isEqualTo: false)
+        .get();
+    for (var doc in snap.docs) {
+      batch.update(doc.reference, {'seen': true});
     }
+    await batch.commit();
   }
 
   @override

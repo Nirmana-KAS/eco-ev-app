@@ -8,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:eco_ev_app/features/station/screens/station_search_delegate.dart';
 import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:eco_ev_app/features/home/widgets/notification_bell_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,10 +64,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         String area = '';
-        if (place.subLocality != null && place.subLocality!.isNotEmpty) area += '${place.subLocality}, ';
-        if (place.locality != null && place.locality!.isNotEmpty) area += '${place.locality}, ';
-        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) area += '${place.administrativeArea}, ';
-        if (place.country != null && place.country!.isNotEmpty) area += place.country!;
+        if (place.subLocality != null && place.subLocality!.isNotEmpty)
+          area += '${place.subLocality}, ';
+        if (place.locality != null && place.locality!.isNotEmpty)
+          area += '${place.locality}, ';
+        if (place.administrativeArea != null &&
+            place.administrativeArea!.isNotEmpty)
+          area += '${place.administrativeArea}, ';
+        if (place.country != null && place.country!.isNotEmpty)
+          area += place.country!;
         area = area.trim();
         if (area.endsWith(',')) area = area.substring(0, area.length - 1);
 
@@ -111,7 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openDirection(String address) async {
     if (address.isEmpty) return;
-    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+    );
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     }
@@ -145,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: black,
+                            color: Colors.black,
                           ),
                         ),
                         if (_userName.isNotEmpty)
@@ -195,11 +203,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('notifications')
-                      .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-                      .where('isRead', isEqualTo: false)
-                      .snapshots(),
+                  stream:
+                      FirebaseFirestore.instance
+                          .collection('notifications')
+                          .where(
+                            'userId',
+                            isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+                          )
+                          .where('seen', isEqualTo: false)
+                          .snapshots(),
                   builder: (context, snapshot) {
                     int unreadCount = 0;
                     if (snapshot.hasData) {
@@ -216,35 +228,41 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           onPressed: () async {
                             Navigator.pushNamed(context, '/notifications');
-                            // Mark all as read after opening
-                            final query = await FirebaseFirestore.instance
-                                .collection('notifications')
-                                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-                                .where('isRead', isEqualTo: false)
-                                .get();
-                            for (var doc in query.docs) {
-                              doc.reference.update({'isRead': true});
-                            }
+                            // Optionally, mark all as seen here if you want
+                            // var query = await FirebaseFirestore.instance
+                            //     .collection('notifications')
+                            //     .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+                            //     .where('seen', isEqualTo: false)
+                            //     .get();
+                            // for (var doc in query.docs) {
+                            //   doc.reference.update({'seen': true});
+                            // }
                           },
                         ),
                         if (unreadCount > 0)
                           Positioned(
-                            right: 8,
-                            top: 10,
+                            right: 6,
+                            top: 6,
                             child: Container(
-                              padding: const EdgeInsets.all(3),
+                              padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 color: Colors.red,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                               ),
-                              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
                               child: Center(
                                 child: Text(
-                                  unreadCount > 9 ? '9+' : '$unreadCount',
+                                  '$unreadCount',
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 11,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -437,10 +455,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => StationDetailScreen(
-                                stationData: data,
-                                stationId: stationId,
-                              ),
+                              builder:
+                                  (_) => StationDetailScreen(
+                                    stationData: data,
+                                    stationId: stationId,
+                                  ),
                             ),
                           );
                         },
@@ -451,15 +470,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           speed: '${data['slots2x']}x Speed',
                           slots: '${data['slots2x']}',
                           address: data['address'] ?? '',
-                          onDirection: () => _openDirection(data['address'] ?? ''),
+                          onDirection:
+                              () => _openDirection(data['address'] ?? ''),
                           onBook: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => StationDetailScreen(
-                                  stationData: data,
-                                  stationId: stationId,
-                                ),
+                                builder:
+                                    (_) => StationDetailScreen(
+                                      stationData: data,
+                                      stationId: stationId,
+                                    ),
                               ),
                             );
                           },
@@ -607,23 +628,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   topLeft: Radius.circular(22),
                   topRight: Radius.circular(22),
                 ),
-                child: image.isNotEmpty
-                    ? Image.network(
-                        image,
-                        height: 95,
-                        width: 185,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        height: 95,
-                        width: 185,
-                        color: Colors.grey[200],
-                        child: const Icon(
-                          Icons.ev_station,
-                          size: 38,
-                          color: Colors.grey,
+                child:
+                    image.isNotEmpty
+                        ? Image.network(
+                          image,
+                          height: 95,
+                          width: 185,
+                          fit: BoxFit.cover,
+                        )
+                        : Container(
+                          height: 95,
+                          width: 185,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.ev_station,
+                            size: 38,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
               ),
               if (isTop)
                 Positioned(
@@ -849,6 +871,22 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.grey[300],
         backgroundImage: const AssetImage('assets/profile_placeholder.png'),
       ),
+    );
+  }
+}
+
+// NotificationBellIcon widget
+class NotificationBellIcon extends StatelessWidget {
+  final VoidCallback? onTap;
+
+  const NotificationBellIcon({Key? key, this.onTap}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.notifications_none, color: Colors.teal, size: 28),
+      onPressed: onTap,
+      tooltip: 'Notifications',
     );
   }
 }

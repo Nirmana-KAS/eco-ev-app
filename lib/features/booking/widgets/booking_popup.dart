@@ -186,12 +186,11 @@ class _BookingPopupState extends State<BookingPopup> {
       final bookingTime =
           '${DateFormat('yyyy-MM-dd HH:mm').format(_startTime!)} - ${DateFormat('yyyy-MM-dd HH:mm').format(_endTime!)}';
 
-      // Add notification to Firestore
+      // After successful booking (add notification)
       await FirebaseFirestore.instance.collection('notifications').add({
         'userId': userId, // Make sure this is the current user's UID
         'title': 'Booking Confirmed',
-        'body':
-            'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
+        'body': 'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
         'createdAt': FieldValue.serverTimestamp(),
         'seen': false, // This makes it "new" for notification bell
       });
