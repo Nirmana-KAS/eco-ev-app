@@ -3,12 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:eco_ev_app/data/services/auth_service.dart';
+import 'package:eco_ev_app/data/services/notification_service.dart';
 import 'package:eco_ev_app/app.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.init();
   runApp(const EcoEvEntry());
 }
 
@@ -64,5 +66,22 @@ class _EcoEvEntryState extends State<EcoEvEntry> {
   @override
   Widget build(BuildContext context) {
     return const EcoEvRoot(); // The main app with routing/auth gate
+  }
+}
+
+class NotificationButton extends StatelessWidget {
+  const NotificationButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () async {
+        await NotificationService.showNotification(
+          'Your Title',
+          'Your body message',
+        );
+      },
+      child: const Text('Show Notification'),
+    );
   }
 }

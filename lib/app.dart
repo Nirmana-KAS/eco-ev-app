@@ -16,6 +16,8 @@ import 'features/admin/screens/edit_station_screen.dart'; // <-- Add this import
 import 'features/profile/screens/profile_screen.dart';
 import 'features/about/screens/about_screen.dart'; // <-- Add this import for AboutScreen
 import 'features/feedback/screens/feedback_screen.dart'; // <-- Add this import if you have the file
+import 'features/booking/screens/booking_history_screen.dart'; // <-- Add this import if you have the file
+import 'features/notifications/screens/notification_screen.dart'; // <-- Add this import if you have the file
 
 // Example fallback theme definition (remove if already defined in theme.dart)
 final ThemeData ecoEvTheme = ThemeData(
@@ -51,8 +53,12 @@ class EcoEvRoot extends StatelessWidget {
           return EditStationScreen(stationId: args);
         },
         '/profile': (context) => const ProfileScreen(),
-        '/about': (context) => const AboutScreen(), // <-- Added AboutScreen route
+        '/about':
+            (context) => const AboutScreen(), // <-- Added AboutScreen route
         '/feedback': (context) => const FeedbackScreen(), // <-- Add this line
+        '/booking-history':
+            (context) => const BookingHistoryScreen(), // <-- Add this line
+        '/notifications': (_) => NotificationScreen(), // <-- Add this line
       },
     );
   }

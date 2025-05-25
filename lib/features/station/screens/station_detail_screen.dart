@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:eco_ev_app/features/booking/widgets/booking_popup.dart';
 
 class StationDetailScreen extends StatelessWidget {
   final Map<String, dynamic> stationData;
@@ -227,27 +228,31 @@ class StationDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Booking slot for $name")),
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await showDialog(
+                            context: context,
+                            barrierDismissible:
+                                false, // user must finish/cancel booking
+                            builder:
+                                (context) => BookingPopup(
+                                  stationId: stationId,
+                                  stationData: stationData,
+                                ),
                           );
                         },
-                        icon: const Icon(
-                          Icons.bolt_rounded,
-                          color: Colors.white,
-                        ),
-                        label: const Text("Book Slot"),
+                        child: const Text("Book Slot"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[700],
+                          minimumSize: const Size(double.infinity, 50),
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
-                          minimumSize: const Size(double.infinity, 48),
                           elevation: 1.5,
-                          textStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
                         ),
                       ),
                     ),

@@ -1,3 +1,5 @@
+// lib/features/home/screens/home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:eco_ev_app/features/station/screens/station_search_delegate.dart';
 import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,15 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         String area = '';
-        if (place.subLocality != null && place.subLocality!.isNotEmpty)
-          area += '${place.subLocality}, ';
-        if (place.locality != null && place.locality!.isNotEmpty)
-          area += '${place.locality}, ';
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty)
-          area += '${place.administrativeArea}, ';
-        if (place.country != null && place.country!.isNotEmpty)
-          area += place.country!;
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) area += '${place.subLocality}, ';
+        if (place.locality != null && place.locality!.isNotEmpty) area += '${place.locality}, ';
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) area += '${place.administrativeArea}, ';
+        if (place.country != null && place.country!.isNotEmpty) area += place.country!;
         area = area.trim();
         if (area.endsWith(',')) area = area.substring(0, area.length - 1);
 
@@ -109,6 +106,14 @@ class _HomeScreenState extends State<HomeScreen> {
           _userName = doc.data()!['username'] ?? "";
         });
       }
+    }
+  }
+
+  void _openDirection(String address) async {
+    if (address.isEmpty) return;
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
     }
   }
 
@@ -195,7 +200,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: black,
                     size: 28,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/notifications');
+                  },
                 ),
               ],
             ),
@@ -209,7 +216,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   context: context,
                   delegate: StationSearchDelegate(),
                 );
-                // No need to handle result since you navigate on tap
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -374,13 +380,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemBuilder: (context, i) {
                       final data =
                           filteredDocs[i].data() as Map<String, dynamic>;
-                      return _stationCardFigma(
-                        image: data['cardImageUrl'] ?? '',
-                        isTop: i == 0,
-                        price: 'Rs.${data['pricePerHour']}/hour',
-                        speed: '${data['slots2x']}x Speed',
-                        slots: '${data['slots2x']}',
-                        address: data['address'] ?? '',
+                      final stationId = filteredDocs[i].id;
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StationDetailScreen(
+                                stationData: data,
+                                stationId: stationId,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _stationCardFigma(
+                          image: data['cardImageUrl'] ?? '',
+                          isTop: i == 0,
+                          price: 'Rs.${data['pricePerHour']}/hour',
+                          speed: '${data['slots2x']}x Speed',
+                          slots: '${data['slots2x']}',
+                          address: data['address'] ?? '',
+                          onDirection: () => _openDirection(data['address'] ?? ''),
+                          onBook: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => StationDetailScreen(
+                                  stationData: data,
+                                  stationId: stationId,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       );
                     },
                   );
@@ -496,6 +528,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required String speed,
     required String slots,
     required String address,
+    required VoidCallback onDirection,
+    required VoidCallback onBook,
   }) {
     return Container(
       width: 185,
@@ -522,24 +556,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   topLeft: Radius.circular(22),
                   topRight: Radius.circular(22),
                 ),
-                child:
-                    image.isNotEmpty
-                        ? Image.network(
-                          image,
-                          height: 95,
-                          width: 185,
-                          fit: BoxFit.cover,
-                        )
-                        : Container(
-                          height: 95,
-                          width: 185,
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.ev_station,
-                            size: 38,
-                            color: Colors.grey,
-                          ),
+                child: image.isNotEmpty
+                    ? Image.network(
+                        image,
+                        height: 95,
+                        width: 185,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        height: 95,
+                        width: 185,
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.ev_station,
+                          size: 38,
+                          color: Colors.grey,
                         ),
+                      ),
               ),
               if (isTop)
                 Positioned(
@@ -612,7 +645,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: onDirection,
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     minimumSize: const Size(50, 22),
@@ -643,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   elevation: 2,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
-                onPressed: () {},
+                onPressed: onBook,
                 child: const Text(
                   'Book Now',
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
