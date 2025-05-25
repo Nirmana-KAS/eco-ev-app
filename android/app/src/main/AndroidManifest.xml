@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Add this permission for Android 13+ notifications support -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Add these permissions just inside the <manifest> tag, before <application> -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>

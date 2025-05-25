@@ -183,29 +183,23 @@ class _BookingPopupState extends State<BookingPopup> {
 
       await FirebaseFirestore.instance.collection('bookings').add(bookingData);
 
-      // Format booking time
       final bookingTime =
           '${DateFormat('yyyy-MM-dd HH:mm').format(_startTime!)} - ${DateFormat('yyyy-MM-dd HH:mm').format(_endTime!)}';
 
-      // Replace with your actual user/station info
-      final userName = FirebaseAuth.instance.currentUser?.displayName ?? 'User';
-      final numberPlate = _plateController.text.trim();
-      final selectedVehicle = _vehicleType ?? '';
-      final slotType = _slotType ?? '';
-
-      // Show local notification (will show only for this user)
-      await NotificationService.showNotification(
-        'Booking Confirmed',
-        'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
-      );
-
-      // Add notification to Firestore for in-app history
+      // Add notification to Firestore
       await FirebaseFirestore.instance.collection('notifications').add({
         'userId': userId,
         'title': 'Booking Confirmed',
         'body': 'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
+        'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // Local notification
+      await NotificationService.showNotification(
+        'Booking Confirmed',
+        'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
+      );
 
       if (mounted) {
         Navigator.pop(context, true); // Close popup

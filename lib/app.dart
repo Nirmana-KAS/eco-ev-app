@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:eco_ev_app/data/services/notification_service.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/screens/welcome_screen.dart';
 import 'features/auth/screens/sign_in_screen.dart';
@@ -84,4 +85,10 @@ class AuthGate extends StatelessWidget {
       },
     );
   }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init(); // Add this!
+  runApp(const EcoEvRoot());
 }

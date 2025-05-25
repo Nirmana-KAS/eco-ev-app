@@ -194,14 +194,65 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.notifications_none_rounded,
-                    color: black,
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/notifications');
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('notifications')
+                      .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+                      .where('isRead', isEqualTo: false)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    int unreadCount = 0;
+                    if (snapshot.hasData) {
+                      unreadCount = snapshot.data!.docs.length;
+                    }
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.notifications_none_rounded,
+                            color: black,
+                            size: 28,
+                          ),
+                          onPressed: () async {
+                            Navigator.pushNamed(context, '/notifications');
+                            // Mark all as read after opening
+                            final query = await FirebaseFirestore.instance
+                                .collection('notifications')
+                                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+                                .where('isRead', isEqualTo: false)
+                                .get();
+                            for (var doc in query.docs) {
+                              doc.reference.update({'isRead': true});
+                            }
+                          },
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            right: 8,
+                            top: 10,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                              child: Center(
+                                child: Text(
+                                  unreadCount > 9 ? '9+' : '$unreadCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
                   },
                 ),
               ],
