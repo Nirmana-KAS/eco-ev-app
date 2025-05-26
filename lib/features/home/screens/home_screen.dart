@@ -7,8 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:eco_ev_app/features/station/screens/station_search_delegate.dart';
 import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
+import 'package:eco_ev_app/features/booking/widgets/booking_popup.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:eco_ev_app/features/home/widgets/notification_bell_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -228,15 +228,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           onPressed: () async {
                             Navigator.pushNamed(context, '/notifications');
-                            // Optionally, mark all as seen here if you want
-                            // var query = await FirebaseFirestore.instance
-                            //     .collection('notifications')
-                            //     .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-                            //     .where('seen', isEqualTo: false)
-                            //     .get();
-                            // for (var doc in query.docs) {
-                            //   doc.reference.update({'seen': true});
-                            // }
                           },
                         ),
                         if (unreadCount > 0)
@@ -450,40 +441,199 @@ class _HomeScreenState extends State<HomeScreen> {
                       final data =
                           filteredDocs[i].data() as Map<String, dynamic>;
                       final stationId = filteredDocs[i].id;
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => StationDetailScreen(
-                                    stationData: data,
-                                    stationId: stationId,
-                                  ),
+
+                      // For slot counts and icons
+                      int slots2x = data['slots2x'] ?? 0;
+                      int slots1x = data['slots1x'] ?? 0;
+                      int totalSlots = slots2x + slots1x;
+
+                      return Container(
+                        width: 185,
+                        margin: const EdgeInsets.only(right: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.13),
+                              blurRadius: 18,
+                              offset: const Offset(0, 7),
                             ),
-                          );
-                        },
-                        child: _stationCardFigma(
-                          image: data['cardImageUrl'] ?? '',
-                          isTop: i == 0,
-                          price: 'Rs.${data['pricePerHour']}/hour',
-                          speed: '${data['slots2x']}x Speed',
-                          slots: '${data['slots2x']}',
-                          address: data['address'] ?? '',
-                          onDirection:
-                              () => _openDirection(data['address'] ?? ''),
-                          onBook: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => StationDetailScreen(
-                                      stationData: data,
-                                      stationId: stationId,
-                                    ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Image
+                            ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(22),
+                                topRight: Radius.circular(22),
                               ),
-                            );
-                          },
+                              child: data['cardImageUrl'] != null &&
+                                      (data['cardImageUrl'] as String).isNotEmpty
+                                  ? Image.network(
+                                      data['cardImageUrl'],
+                                      height: 95,
+                                      width: 185,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(
+                                      height: 95,
+                                      width: 185,
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.ev_station,
+                                        size: 38,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              child: Text(
+                                'Rs.${data['pricePerHour']}/hour',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF30B27C),
+                                ),
+                              ),
+                            ),
+                            // --- Slot counts & icons row
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 1),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.flash_on,
+                                      color: Colors.grey[600], size: 15),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '2x: ',
+                                    style: TextStyle(
+                                        color: Colors.red[700], fontSize: 12),
+                                  ),
+                                  Text(
+                                    '$slots2x',
+                                    style: TextStyle(
+                                        color: Colors.red[700],
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.flash_on,
+                                      color: Colors.grey[600], size: 15),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '1x: ',
+                                    style: TextStyle(
+                                        color: Colors.red[700], fontSize: 12),
+                                  ),
+                                  Text(
+                                    '$slots1x',
+                                    style: TextStyle(
+                                        color: Colors.red[700],
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Icon(Icons.ev_station,
+                                      color: Colors.green[600], size: 16),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '$totalSlots',
+                                    style: TextStyle(
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // --- Address and Direction
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.location_on, color: Colors.teal[400], size: 14),
+                                  const SizedBox(width: 2),
+                                  Expanded(
+                                    child: Text(
+                                      data['address'] ?? '',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        _openDirection(data['address'] ?? ''),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(50, 22),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      "Direction",
+                                      style: TextStyle(
+                                        color: Colors.teal[700],
+                                        fontSize: 12,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // --- Book Now Button
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF30B27C),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    elevation: 2,
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (_) => Material(
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(22),
+                                        ),
+                                        child: BookingPopup(
+                                          stationData: data,
+                                          stationId: stationId,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Book Now',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -586,176 +736,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_rounded),
             label: "Profile",
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Figma-style Station Card Widget
-  Widget _stationCardFigma({
-    required String image,
-    required bool isTop,
-    required String price,
-    required String speed,
-    required String slots,
-    required String address,
-    required VoidCallback onDirection,
-    required VoidCallback onBook,
-  }) {
-    return Container(
-      width: 185,
-      margin: const EdgeInsets.only(right: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.13),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image and badge
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(22),
-                  topRight: Radius.circular(22),
-                ),
-                child:
-                    image.isNotEmpty
-                        ? Image.network(
-                          image,
-                          height: 95,
-                          width: 185,
-                          fit: BoxFit.cover,
-                        )
-                        : Container(
-                          height: 95,
-                          width: 185,
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.ev_station,
-                            size: 38,
-                            color: Colors.grey,
-                          ),
-                        ),
-              ),
-              if (isTop)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.88),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      "Top",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Text(
-              price,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF30B27C),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
-            child: Row(
-              children: [
-                Icon(Icons.flash_on, color: Colors.grey[600], size: 15),
-                const SizedBox(width: 3),
-                Text(
-                  speed,
-                  style: TextStyle(color: Colors.black54, fontSize: 12),
-                ),
-                const SizedBox(width: 10),
-                Icon(Icons.ev_station, color: Colors.grey[600], size: 15),
-                const SizedBox(width: 3),
-                Text(
-                  slots,
-                  style: TextStyle(color: Colors.black54, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
-            child: Row(
-              children: [
-                Icon(Icons.location_on, color: Colors.teal[400], size: 14),
-                const SizedBox(width: 2),
-                Flexible(
-                  child: Text(
-                    address,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                TextButton(
-                  onPressed: onDirection,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(50, 22),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    "Direction",
-                    style: TextStyle(
-                      color: Colors.teal[700],
-                      fontSize: 12,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF30B27C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  elevation: 2,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                onPressed: onBook,
-                child: const Text(
-                  'Book Now',
-                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -871,22 +851,6 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.grey[300],
         backgroundImage: const AssetImage('assets/profile_placeholder.png'),
       ),
-    );
-  }
-}
-
-// NotificationBellIcon widget
-class NotificationBellIcon extends StatelessWidget {
-  final VoidCallback? onTap;
-
-  const NotificationBellIcon({Key? key, this.onTap}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.notifications_none, color: Colors.teal, size: 28),
-      onPressed: onTap,
-      tooltip: 'Notifications',
     );
   }
 }
