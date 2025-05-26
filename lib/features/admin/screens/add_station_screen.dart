@@ -34,7 +34,6 @@ class _AddStationScreenState extends State<AddStationScreen> {
   LatLng? _selectedLatLng;
   bool _isLoading = false;
   bool _isUploadingCardImage = false;
-  String? _uploadedCardImageUrl;
 
   // Map initial position (Sri Lanka)
   static const LatLng _initPosition = LatLng(7.0, 80.0);
@@ -146,6 +145,11 @@ class _AddStationScreenState extends State<AddStationScreen> {
             'createdAt': FieldValue.serverTimestamp(),
           });
 
+      // Notify all users about the new station (call this after station is added)
+      await notifyAllUsersNewStation({
+        'name': _nameController.text.trim(),
+      });
+
       // Upload card image if available
       if (_cardImage != null) {
         String? cardImageUrl = await _uploadCardImage(stationDoc.id);
@@ -168,6 +172,23 @@ class _AddStationScreenState extends State<AddStationScreen> {
       }
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> notifyAllUsersNewStation(
+    Map<String, dynamic> stationData,
+  ) async {
+    final users = await FirebaseFirestore.instance.collection('users').get();
+
+    for (var user in users.docs) {
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'userId': user.id,
+        'title': 'New Station Added!',
+        'body':
+            'A new charging station "${stationData['name']}" is now available.',
+        'createdAt': FieldValue.serverTimestamp(),
+        'seen': false,
+      });
     }
   }
 
@@ -218,22 +239,24 @@ class _AddStationScreenState extends State<AddStationScreen> {
                       color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Center(
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
                         CircleAvatar(
-                          radius: 48,
+                          radius: avatarRadius,
                           backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              _selectedImage != null
-                                  ? FileImage(_selectedImage!)
-                                  : null,
-                          child:
-                              _selectedImage == null
-                                  ? const Icon(Icons.ev_station, size: 40, color: Colors.white70)
-                                  : null,
+                          backgroundImage: _selectedImage != null
+                              ? FileImage(_selectedImage!)
+                              : null,
+                          child: _selectedImage == null
+                              ? const Icon(
+                                  Icons.ev_station,
+                                  size: 40,
+                                  color: Colors.white70,
+                                )
+                              : null,
                         ),
                         Positioned(
                           bottom: 4,
@@ -246,7 +269,11 @@ class _AddStationScreenState extends State<AddStationScreen> {
                                 color: Colors.black.withOpacity(0.7),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -267,7 +294,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
                       color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Center(
                     child: Stack(
                       alignment: Alignment.bottomRight,
@@ -286,7 +313,11 @@ class _AddStationScreenState extends State<AddStationScreen> {
                                 : null,
                           ),
                           child: _cardImage == null
-                              ? const Icon(Icons.image, size: 60, color: Colors.grey)
+                              ? const Icon(
+                                  Icons.image,
+                                  size: 60,
+                                  color: Colors.grey,
+                                )
                               : null,
                         ),
                         Positioned(
@@ -300,7 +331,11 @@ class _AddStationScreenState extends State<AddStationScreen> {
                                 color: Colors.black.withOpacity(0.7),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -346,17 +381,16 @@ class _AddStationScreenState extends State<AddStationScreen> {
                         target: _selectedLatLng ?? _initPosition,
                         zoom: 13,
                       ),
-                      markers:
-                          _selectedLatLng == null
-                              ? {}
-                              : {
-                                Marker(
-                                  markerId: const MarkerId('station_location'),
-                                  position: _selectedLatLng!,
-                                ),
-                              },
-                      onTap:
-                          (latLng) => setState(() => _selectedLatLng = latLng),
+                      markers: _selectedLatLng == null
+                          ? {}
+                          : {
+                              Marker(
+                                markerId: const MarkerId('station_location'),
+                                position: _selectedLatLng!,
+                              ),
+                            },
+                      onTap: (latLng) =>
+                          setState(() => _selectedLatLng = latLng),
                       myLocationButtonEnabled: true,
                       myLocationEnabled: true,
                     ),
@@ -457,16 +491,13 @@ class _AddStationScreenState extends State<AddStationScreen> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed:
-                      (_isLoading || _isUploadingCardImage)
-                          ? null
-                          : _addStation,
-                  child:
-                      _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                            'Add Station',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                      (_isLoading || _isUploadingCardImage) ? null : _addStation,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Add Station',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ],
@@ -485,8 +516,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      validator:
-          validator ??
+      validator: validator ??
           (value) => value == null || value.trim().isEmpty ? 'Required' : null,
       decoration: InputDecoration(
         labelText: label,
