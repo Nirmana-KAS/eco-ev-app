@@ -84,7 +84,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               decoration: InputDecoration(
                 hintText: "Enter your email",
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -102,9 +102,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(
-                    0xFF61B15A,
-                  ), // <-- Send Code button color
+                  backgroundColor: const Color(0xFF30B27C), // <-- Send Code button color
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -138,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: const Text(
                     "Login",
                     style: TextStyle(
-                      color: Color(0xFF138808), // <-- Login text color
+                      color: Color(0xFF30B27C), // <-- Login text color
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
