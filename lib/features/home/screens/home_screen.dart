@@ -509,33 +509,33 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Row(
                                 children: [
                                   Icon(Icons.flash_on,
-                                      color: Colors.grey[600], size: 15),
+                                      color: Color(0xFFFFA800), size: 15),
                                   const SizedBox(width: 3),
                                   Text(
                                     '2x: ',
                                     style: TextStyle(
-                                        color: Colors.red[700], fontSize: 12),
+                                        color: Color(0xFFFFA800), fontSize: 12),
                                   ),
                                   Text(
                                     '$slots2x',
                                     style: TextStyle(
-                                        color: Colors.red[700],
+                                        color: Color(0xFFFFA800),
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12),
                                   ),
                                   const SizedBox(width: 8),
                                   Icon(Icons.flash_on,
-                                      color: Colors.grey[600], size: 15),
+                                      color: Color(0xFFFFA800), size: 15),
                                   const SizedBox(width: 3),
                                   Text(
                                     '1x: ',
                                     style: TextStyle(
-                                        color: Colors.red[700], fontSize: 12),
+                                        color: Color(0xFFFFA800), fontSize: 12),
                                   ),
                                   Text(
                                     '$slots1x',
                                     style: TextStyle(
-                                        color: Colors.red[700],
+                                        color: Color(0xFFFFA800),
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12),
                                   ),
@@ -612,7 +612,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     showModalBottomSheet(
                                       context: context,
                                       isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
+                                      backgroundColor: const Color.fromARGB(255, 44, 43, 43),
                                       builder: (_) => Material(
                                         borderRadius: const BorderRadius.vertical(
                                           top: Radius.circular(22),
@@ -627,6 +627,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: const Text(
                                     'Book Now',
                                     style: TextStyle(
+                                        color: Colors.white,
                                         fontWeight: FontWeight.w500,
                                         fontSize: 15),
                                   ),
@@ -697,7 +698,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: const Text("Admin Dashboard"),
                       onPressed: () => Navigator.pushNamed(context, '/admin'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: const Color(0xFF30B27C)
                       ),
                     ),
                   );

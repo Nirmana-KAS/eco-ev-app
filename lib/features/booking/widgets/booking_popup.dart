@@ -382,6 +382,7 @@ class _BookingPopupState extends State<BookingPopup> {
                           backgroundColor: Colors.green,
                           minimumSize: const Size(double.infinity, 48),
                           textStyle: const TextStyle(
+                            color: Color(0xFFFFFFFF),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -389,14 +390,23 @@ class _BookingPopupState extends State<BookingPopup> {
                         child:
                             _isLoading
                                 ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Book Now',
+                                    style: TextStyle(
+                                      color: Colors.white, // Set text color to white
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.3,
+                                    ),
                                   ),
-                                )
-                                : const Text('Book Now'),
+
                       ),
                     ),
                     const SizedBox(width: 12),

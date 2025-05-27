@@ -253,8 +253,8 @@ class _StationCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.teal.withOpacity(0.09),
-                foregroundColor: Colors.teal[700],
+                backgroundColor: const Color(0xFF138808), // solid green background
+                foregroundColor: const Color(0xFFFFFFFF), // white text/icon color
                 side: BorderSide.none,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
