@@ -64,7 +64,7 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 hintText: "Email",
                 filled: true,
-                fillColor: const Color.fromARGB(255, 241, 248, 237),
+                fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
@@ -82,7 +82,7 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 hintText: "Enter your password",
                 filled: true,
-                fillColor: const Color.fromARGB(255, 241, 248, 237),
+                fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,

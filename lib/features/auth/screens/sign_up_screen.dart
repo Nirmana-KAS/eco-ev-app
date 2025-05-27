@@ -138,7 +138,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   CircleAvatar(
                     radius: 44,
-                    backgroundColor: Colors.grey[300],
+                    backgroundColor: Color(0x1A30B27C), // #30B27C with 10% opacity
                     backgroundImage: _selectedImage != null
                         ? FileImage(_selectedImage!)
                         : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
@@ -269,7 +269,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color.fromARGB(255, 241, 248, 237),
+        fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
@@ -294,7 +294,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color.fromARGB(255, 241, 248, 237),
+        fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
