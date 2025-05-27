@@ -123,12 +123,12 @@ class _SignInScreenState extends State<SignInScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007800), // <-- Changed to #007800
+                  backgroundColor: const Color(0xFF30B27C), // <-- Changed to #30B27C
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25), // More rounded
                   ),
                   elevation: 8, // 3D effect
-                  shadowColor: const Color(0xFF007800).withOpacity(0.4), // Soft #007800 shadow
+                  shadowColor: const Color(0xFF30B27C),
                 ),
                 onPressed: _isLoading ? null : _login,
                 child: _isLoading
@@ -206,7 +206,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     TextSpan(
                       text: "Register Now",
                       style: const TextStyle(
-                        color: Color(0xFF138808),
+                        color: Color(0xFF30B27C),
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                         letterSpacing: 0.2,
