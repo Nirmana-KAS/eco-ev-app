@@ -224,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 19),
                       // Username
                       Text(
                         username,
@@ -238,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         email,
                         style: TextStyle(
-                          color: Colors.grey[700],
+                          color: Colors.grey[702],
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
@@ -268,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 24),
                       // --- Log Out Button ---
                       SizedBox(
-                        width: double.infinity,
+                        width:  double.infinity,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.logout),
                           label: const Text('Log Out'),
@@ -311,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: OutlinedButton.icon(
                               icon: const Icon(Icons.info_outline, color: Color(0xFF007800)),
                               label: const Text(
-                                "About Us",
+                                "About  Us",
                                 style: TextStyle(color: Color(0xFF007800)),
                               ),
                               style: OutlinedButton.styleFrom(
