@@ -224,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 19),
+                      const SizedBox(height: 18),
                       // Username
                       Text(
                         username,
@@ -238,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         email,
                         style: TextStyle(
-                          color: Colors.grey[702],
+                          color: Colors.grey[700],
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
