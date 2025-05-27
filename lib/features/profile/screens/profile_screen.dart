@@ -268,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 24),
                       // --- Log Out Button ---
                       SizedBox(
-                        width: double.infinity,
+                        width:  double.infinity,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.logout),
                           label: const Text('Log Out'),
@@ -311,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: OutlinedButton.icon(
                               icon: const Icon(Icons.info_outline, color: Color(0xFF007800)),
                               label: const Text(
-                                "About Us",
+                                "About  Us",
                                 style: TextStyle(color: Color(0xFF007800)),
                               ),
                               style: OutlinedButton.styleFrom(
@@ -360,6 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+
   // Helper for Profile Info Row
   Widget _profileRow(String label, String value, {IconData? icon}) {
     return Row(
@@ -375,6 +376,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
           ),
         ),
+
+
         Expanded(
           flex: 3,
           child: Text(
@@ -392,4 +395,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
+
 }
