@@ -243,7 +243,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 19),
+                      const SizedBox(height: 18),
                       Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(
