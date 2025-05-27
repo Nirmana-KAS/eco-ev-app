@@ -360,36 +360,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Helper for Profile Info Row
-  Widget _profileRow(String label, String value, {IconData? icon}) {
-    return Row(
-      children: [
-        if (icon != null) ...[
-          Icon(icon, color: Colors.green[700], size: 20),
-          const SizedBox(width: 12),
-        ],
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
-          ),
-        ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
+
 }
