@@ -714,9 +714,12 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedTab,
         onTap: (idx) {
           setState(() => _selectedTab = idx);
-          if (idx == 3) {
+          if (idx == 1) { // Stations tab
+            Navigator.pushNamed(context, '/stations');
+          } else if (idx == 3) { // Profile tab
             Navigator.pushNamed(context, '/profile');
           }
+          // Add logic for other tabs if needed
         },
         selectedItemColor: green,
         unselectedItemColor: darkGrey,

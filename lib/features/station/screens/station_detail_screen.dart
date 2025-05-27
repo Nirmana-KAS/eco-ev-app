@@ -36,69 +36,54 @@ class StationDetailScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(0),
+        padding: EdgeInsets.zero,
         children: [
           // Top Card Image
           if (cardImgUrl != null && cardImgUrl.isNotEmpty)
-            Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
-                  child: Image.network(
-                    cardImgUrl,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                // Shadow over image
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(32),
-                      bottomRight: Radius.circular(32),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.15),
-                        Colors.black.withOpacity(0.30),
-                      ],
-                    ),
-                  ),
-                ),
-                // Logo Overlap
-                if (logoUrl != null && logoUrl.isNotEmpty)
-                  Positioned(
-                    bottom: -34,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.16),
-                            blurRadius: 15,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        backgroundImage: NetworkImage(logoUrl),
-                        radius: 38,
-                        backgroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-              ],
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+              child: Image.network(
+                cardImgUrl,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
-          const SizedBox(height: 54), // For logo overlap
+
+          // ---- FULL LOGO, centered below image ----
+          if (logoUrl != null && logoUrl.isNotEmpty)
+            Transform.translate(
+              offset: const Offset(0, -38),
+              child: Container(
+                alignment: Alignment.center,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.16),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    backgroundImage: NetworkImage(logoUrl),
+                    radius: 38,
+                    backgroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+
+          // Details Card
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 18),
             padding: const EdgeInsets.all(22),
@@ -114,25 +99,33 @@ class StationDetailScreen extends StatelessWidget {
               ],
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF23272E),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  owner,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF30B27C),
+                // Name and Owner
+                Center(
+                  child: Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF23272E),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
+                if (owner != null && owner.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Center(
+                    child: Text(
+                      owner,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF30B27C),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 _infoRow(Icons.location_on, "Address", address, context),
                 const SizedBox(height: 7),
@@ -150,20 +143,17 @@ class StationDetailScreen extends StatelessWidget {
                         scheme: 'tel',
                         path: contact.replaceAll(' ', ''),
                       );
-                      print("Launching: $callUri");
                       try {
                         bool launched = await launchUrl(
                           callUri,
                           mode: LaunchMode.externalApplication,
                         );
-                        print("Launched: $launched");
                         if (!launched) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Could not launch dialer!')),
                           );
                         }
                       } catch (e) {
-                        print("Launch error: $e");
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -232,13 +222,11 @@ class StationDetailScreen extends StatelessWidget {
                         onPressed: () async {
                           await showDialog(
                             context: context,
-                            barrierDismissible:
-                                false, // user must finish/cancel booking
-                            builder:
-                                (context) => BookingPopup(
-                                  stationId: stationId,
-                                  stationData: stationData,
-                                ),
+                            barrierDismissible: false,
+                            builder: (context) => BookingPopup(
+                              stationId: stationId,
+                              stationData: stationData,
+                            ),
                           );
                         },
                         child: const Text("Book Slot"),

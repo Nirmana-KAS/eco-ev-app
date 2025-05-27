@@ -19,6 +19,7 @@ import 'features/about/screens/about_screen.dart';
 import 'features/feedback/screens/feedback_screen.dart';
 import 'features/booking/screens/booking_history_screen.dart';
 import 'features/notifications/screens/notification_screen.dart';
+import 'package:eco_ev_app/features/station/screens/stations_screen.dart';
 
 // Theme setup
 final ThemeData ecoEvTheme = ThemeData(
@@ -58,6 +59,7 @@ class EcoEvRoot extends StatelessWidget {
         '/feedback': (context) => const FeedbackScreen(),
         '/booking-history': (context) => const BookingHistoryScreen(),
         '/notifications': (context) => const NotificationScreen(),
+        '/stations': (context) => const StationsScreen(),
       },
     );
   }

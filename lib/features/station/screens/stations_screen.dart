@@ -1,300 +1,332 @@
+// lib/features/station/screens/stations_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class StationsScreen extends StatefulWidget {
+// Import your booking popup and station details
+import 'package:eco_ev_app/features/booking/widgets/booking_popup.dart';
+import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
+
+class StationsScreen extends StatelessWidget {
   const StationsScreen({super.key});
 
   @override
-  State<StationsScreen> createState() => _StationsScreenState();
-}
-
-class _StationsScreenState extends State<StationsScreen> {
-  String _searchText = '';
-  int _selectedChip = 0;
-  final List<String> chips = ["Nearby", "Availability", "Newest"];
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final Color green = const Color(0xFF61B15A);
-    final Color gray = const Color(0xFFECECEC);
-    final Color dark = const Color(0xFF23272E);
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: null, // No appbar as per your design
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Location + Notification
-              Row(
+      appBar: AppBar(
+        title: const Text('Stations', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+      body: Container(
+        color: const Color(0xFFF9F7FA),
+        child: Column(
+          children: [
+            // Search & filter chips
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.location_on, color: green, size: 22),
-                  const SizedBox(width: 5),
-                  Text(
-                    "Homagama, Sri lanka", // <-- You can use your location code
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: dark.withOpacity(0.7),
-                    ),
-                  ),
-                  Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: gray, width: 1.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.notifications_none_outlined,
-                        color: dark,
-                        size: 22,
-                      ),
-                      onPressed: () {},
+                  _SearchBar(),
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _Chip(label: "Nearby", selected: true),
+                        const SizedBox(width: 10),
+                        _Chip(label: "Availability"),
+                        const SizedBox(width: 10),
+                        _Chip(label: "Newest"),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+            ),
+            // Stations List
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('stations')
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final docs = snapshot.data!.docs;
+                  if (docs.isEmpty) {
+                    return const Center(child: Text('No stations found.'));
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    itemCount: docs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (context, i) {
+                      final data = docs[i].data() as Map<String, dynamic>;
+                      final docId = docs[i].id;
+                      return _StationCard(data: data, docId: docId);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-              // Search Bar
-              Container(
-                decoration: BoxDecoration(
-                  color: gray,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (v) => setState(() => _searchText = v),
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "Search e-stations, city, etc",
-                          hintStyle: TextStyle(color: Colors.grey),
-                        ),
+// --- Station Card Widget ---
+class _StationCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final String docId;
+  const _StationCard({required this.data, required this.docId});
+
+  @override
+  Widget build(BuildContext context) {
+    final String name = data['name'] ?? "";
+    final String address = data['address'] ?? "";
+    final double price = data['pricePerHour']?.toDouble() ?? 0;
+    final int slots2x = data['slots2x'] ?? 0;
+    final int slots1x = data['slots1x'] ?? 0;
+    final int totalSlots = slots2x + slots1x;
+    final String logoUrl = data['logoUrl'] ?? '';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Logo + Price
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Station Logo (clickable)
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StationDetailScreen(
+                        stationData: data,
+                        stationId: docId,
                       ),
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 38,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: (logoUrl.isNotEmpty)
+                      ? NetworkImage(logoUrl)
+                      : null,
+                  child: (logoUrl.isEmpty)
+                      ? const Icon(Icons.ev_station, size: 40, color: Colors.grey)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Price and Power Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rs.${price.toStringAsFixed(0)}/hour',
+                      style: const TextStyle(
+                        color: Color(0xFF22A060),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.flash_on, color: Colors.teal[700], size: 18),
+                        const SizedBox(width: 4),
+                        const Text(
+                          '2x, 1x Speed',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Icon(Icons.ev_station, color: Colors.teal[700], size: 17),
+                        Text(
+                          '${(data['slots2x'] ?? 0) + (data['slots1x'] ?? 0)}',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.directions, color: Colors.teal[400], size: 19), // changed icon
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: InkWell(
+                            onTap: () async {
+                              String query = Uri.encodeComponent(address);
+                              String googleUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
+                              if (await canLaunch(googleUrl)) {
+                                await launch(googleUrl);
+                              }
+                            },
+                            child: Text(
+                              "Direction",
+                              style: TextStyle(
+                                color: Colors.teal[600],
+                                fontWeight: FontWeight.w500,
+                                fontSize: 15,
+                                decoration: TextDecoration.underline,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
-
-              // Chips
-              SizedBox(
-                height: 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: chips.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, i) {
-                    final selected = i == _selectedChip;
-                    return ChoiceChip(
-                      label: Text(
-                        chips[i],
-                        style: TextStyle(
-                          color: selected ? green : dark,
-                          fontWeight:
-                              selected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                      selected: selected,
-                      selectedColor: green.withOpacity(0.13),
-                      backgroundColor: gray,
-                      onSelected: (_) => setState(() => _selectedChip = i),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Stations List/Grid
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream:
-                      FirebaseFirestore.instance
-                          .collection('stations')
-                          .orderBy('name')
-                          .snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final docs = snapshot.data!.docs;
-
-                    // Filter by search
-                    final filtered =
-                        docs.where((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final name =
-                              (data['name'] ?? '').toString().toLowerCase();
-                          final address =
-                              (data['address'] ?? '').toString().toLowerCase();
-                          return name.contains(_searchText.toLowerCase()) ||
-                              address.contains(_searchText.toLowerCase());
-                        }).toList();
-
-                    if (filtered.isEmpty) {
-                      return const Center(child: Text("No stations found"));
-                    }
-
-                    return GridView.builder(
-                      padding: EdgeInsets.zero,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 18,
-                        crossAxisSpacing: 14,
-                        childAspectRatio: 0.82,
-                      ),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, idx) {
-                        final doc = filtered[idx];
-                        final data = doc.data() as Map<String, dynamic>;
-                        return _stationCard(context, data);
-                      },
-                    );
-                  },
-                ),
-              ),
             ],
           ),
-        ),
-      ),
-      // Bottom nav bar is handled in your main navigation
-    );
-  }
-
-  Widget _stationCard(BuildContext context, Map<String, dynamic> data) {
-    final Color green = const Color(0xFF61B15A);
-    final logoUrl = data['logoUrl'] as String?;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF23272E).withOpacity(0.09),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 14),
-          // Station Logo
-          ClipRRect(
-            borderRadius: BorderRadius.circular(100),
-            child:
-                logoUrl != null && logoUrl.isNotEmpty
-                    ? Image.network(
-                      logoUrl,
-                      width: 58,
-                      height: 58,
-                      fit: BoxFit.cover,
-                    )
-                    : Image.asset(
-                      'assets/station_icon.png', // fallback image in assets
-                      width: 58,
-                      height: 58,
-                      fit: BoxFit.cover,
-                    ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Rs.${data['pricePerHour']?.toString() ?? '-'} /hour",
-            style: TextStyle(
-              color: green,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.flash_on, color: green, size: 16),
-              const SizedBox(width: 2),
-              Text(
-                "${data['slots2x'] ?? 0}x Speed",
-                style: TextStyle(fontSize: 12, color: Colors.black87),
-              ),
-              const SizedBox(width: 6),
-              Icon(Icons.ev_station_rounded, color: green, size: 16),
-              const SizedBox(width: 2),
-              Text(
-                "${data['slots1x'] ?? 0}",
-                style: TextStyle(fontSize: 12, color: Colors.black87),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.location_on, color: Colors.grey, size: 15),
-              Flexible(
-                child: Text(
-                  data['address'] ?? '-',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            data['name'] ?? '',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            "Direction",
-            style: TextStyle(
-              fontSize: 12,
-              color: green,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-          const Spacer(),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 4),
+          // Station Name & Address (name is clickable)
           GestureDetector(
             onTap: () {
-              // Go to booking/Station detail (implement as needed)
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StationDetailScreen(
+                    stationData: data,
+                    stationId: docId,
+                  ),
+                ),
+              );
             },
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: Text(
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(
+            address,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+          const SizedBox(height: 12),
+          // Book Now Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                backgroundColor: Colors.teal.withOpacity(0.09),
+                foregroundColor: Colors.teal[700],
+                side: BorderSide.none,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () {
+                // Open booking popup
+                showDialog(
+                  context: context,
+                  builder: (context) => BookingPopup(
+                    stationData: data,
+                    stationId: docId,
+                  ),
+                );
+              },
+              child: const Text(
                 "Book Now",
                 style: TextStyle(
-                  color: green,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  decoration: TextDecoration.underline,
+                  fontSize: 20,
+                  letterSpacing: 0.3,
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// --- Search Bar Widget ---
+class _SearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.search, size: 22),
+        hintText: "Search e-stations, city, etc",
+        filled: true,
+        fillColor: Colors.grey[100],
+        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      // onChanged: (v) { // Add search logic if needed },
+    );
+  }
+}
+
+// --- Filter Chips Widget ---
+class _Chip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  const _Chip({required this.label, this.selected = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFFE1F5E5) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: selected ? Colors.teal[700] : Colors.grey[600],
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 15,
+        ),
       ),
     );
   }
