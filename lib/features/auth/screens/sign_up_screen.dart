@@ -214,11 +214,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF61B15A),
+                  backgroundColor: const Color(0xFF30B27C),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
-                  shadowColor: Colors.green.withOpacity(0.4),
+                  shadowColor: const Color(0xFF30B27C).withOpacity(0.4),
                 ),
                 onPressed: _isUploadingImage || _isLoading ? null : _register,
                 child: (_isUploadingImage || _isLoading)
@@ -244,7 +244,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: const Text(
                     "Login Now",
                     style: TextStyle(
-                      color: Color(0xFF138808),
+                      color: Color(0xFF30B27C),
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
