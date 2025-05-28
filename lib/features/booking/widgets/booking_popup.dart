@@ -1,3 +1,5 @@
+// lib/features/booking/widgets/booking_popup.dart
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -54,8 +56,14 @@ class _BookingPopupState extends State<BookingPopup> {
       );
       if (time != null) {
         setState(() {
-          _startTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
-          _endTime = null;
+          _startTime = DateTime(
+            picked.year,
+            picked.month,
+            picked.day,
+            time.hour,
+            time.minute,
+          );
+          _endTime = null; // reset end time if start time changes
         });
       }
     }
@@ -76,56 +84,46 @@ class _BookingPopupState extends State<BookingPopup> {
       );
       if (time != null) {
         setState(() {
-          _endTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
+          _endTime = DateTime(
+            picked.year,
+            picked.month,
+            picked.day,
+            time.hour,
+            time.minute,
+          );
         });
       }
     }
   }
 
-  Future<void> _checkAvailability({bool silent = false}) async {
+  Future<void> _checkAvailability() async {
     if (_startTime == null || _endTime == null) return;
-
     setState(() => _checking = true);
 
-    try {
-      final bookings = await FirebaseFirestore.instance
-          .collection('bookings')
-          .where('stationId', isEqualTo: widget.stationId)
-          .where('endTime', isGreaterThan: _startTime)
-          .where('startTime', isLessThan: _endTime)
-          .get();
+    final bookings =
+        await FirebaseFirestore.instance
+            .collection('bookings')
+            .where('stationId', isEqualTo: widget.stationId)
+            .where('endTime', isGreaterThan: _startTime)
+            .where('startTime', isLessThan: _endTime)
+            .get();
 
-      int booked2x = 0;
-      int booked1x = 0;
-      for (var doc in bookings.docs) {
-        final slotType = doc['slotType'] ?? '1x';
-        if (slotType == '2x') booked2x++;
-        if (slotType == '1x') booked1x++;
-      }
-
-      final max2x = widget.stationData['slots2x'] ?? 0;
-      final max1x = widget.stationData['slots1x'] ?? 0;
-
-      setState(() {
-        _available2x = booked2x < max2x;
-        _available1x = booked1x < max1x;
-        _checking = false;
-      });
-
-      if (!silent) {
-        final snackBar = SnackBar(
-          content: Text("Available: 2x: $_available2x, 1x: $_available1x"),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
-      }
-    } catch (e) {
-      setState(() => _checking = false);
-      if (!silent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error checking availability: $e')),
-        );
-      }
+    int booked2x = 0;
+    int booked1x = 0;
+    for (var doc in bookings.docs) {
+      final slotType = doc['slotType'] ?? '1x';
+      if (slotType == '2x') booked2x++;
+      if (slotType == '1x') booked1x++;
     }
+
+    final max2x = widget.stationData['slots2x'] ?? 0;
+    final max1x = widget.stationData['slots1x'] ?? 0;
+
+    setState(() {
+      _available2x = booked2x < max2x;
+      _available1x = booked1x < max1x;
+      _checking = false;
+    });
   }
 
   void _calculatePrice() {
@@ -134,10 +132,11 @@ class _BookingPopupState extends State<BookingPopup> {
       return;
     }
     final hours = _endTime!.difference(_startTime!).inMinutes / 60.0;
-    final pricePerHour = (widget.stationData['pricePerHour'] ?? 0).toDouble();
-    double total = _slotType == "2x" ? pricePerHour * 2 * hours : pricePerHour * hours;
+    double pricePerHour = (widget.stationData['pricePerHour'] ?? 0).toDouble();
+    double price =
+        _slotType == "2x" ? pricePerHour * 2 * hours : pricePerHour * hours;
     setState(() {
-      _price = total.ceilToDouble();
+      _price = price.ceilToDouble(); // round up
     });
   }
 
@@ -145,6 +144,7 @@ class _BookingPopupState extends State<BookingPopup> {
     setState(() => _booking = true);
 
     try {
+      // Validate input
       if (_vehicleType == null ||
           _plateController.text.trim().isEmpty ||
           _slotType == null ||
@@ -153,26 +153,20 @@ class _BookingPopupState extends State<BookingPopup> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please complete all fields')),
         );
+        setState(() => _booking = false);
         return;
       }
 
-      await _checkAvailability(silent: true);
-
-      if ((_slotType == '2x' && !_available2x) || (_slotType == '1x' && !_available1x)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Selected slot type not available')),
-        );
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      if (userId.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('User not logged in')));
+        setState(() => _booking = false);
         return;
       }
 
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in')),
-        );
-        return;
-      }
-
+      // Compose booking data
       final bookingData = {
         'stationId': widget.stationId,
         'stationName': widget.stationData['name'],
@@ -192,29 +186,31 @@ class _BookingPopupState extends State<BookingPopup> {
       final bookingTime =
           '${DateFormat('yyyy-MM-dd HH:mm').format(_startTime!)} - ${DateFormat('yyyy-MM-dd HH:mm').format(_endTime!)}';
 
+      // After successful booking (add notification)
       await FirebaseFirestore.instance.collection('notifications').add({
-        'userId': userId,
+        'userId': userId, // Make sure this is the current user's UID
         'title': 'Booking Confirmed',
         'body': 'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
         'createdAt': FieldValue.serverTimestamp(),
-        'seen': false,
+        'seen': false, // This makes it "new" for notification bell
       });
 
+      // Local notification
       await NotificationService.showNotification(
         'Booking Confirmed',
         'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
       );
 
       if (mounted) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Booking successful!')),
-        );
+        Navigator.pop(context, true); // Close popup
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Booking successful!')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Booking failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Booking failed: $e')));
     } finally {
       setState(() => _booking = false);
     }
@@ -222,7 +218,7 @@ class _BookingPopupState extends State<BookingPopup> {
 
   @override
   Widget build(BuildContext context) {
-    _calculatePrice();
+    _calculatePrice(); // update price when build
     return Material(
       type: MaterialType.transparency,
       child: Center(
@@ -236,16 +232,25 @@ class _BookingPopupState extends State<BookingPopup> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   "Book Charging Slot",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   value: _vehicleType,
-                  items: vehicleTypes
-                      .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                      .toList(),
+                  items:
+                      vehicleTypes
+                          .map(
+                            (type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type),
+                            ),
+                          )
+                          .toList(),
                   decoration: const InputDecoration(
                     labelText: "Vehicle Type",
                     border: OutlineInputBorder(),
@@ -266,18 +271,26 @@ class _BookingPopupState extends State<BookingPopup> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _pickStartTime,
-                        child: Text(_startTime == null
-                            ? "Pick Start Time"
-                            : DateFormat('yyyy-MM-dd HH:mm').format(_startTime!)),
+                        child: Text(
+                          _startTime == null
+                              ? "Pick Start Time"
+                              : DateFormat(
+                                'yyyy-MM-dd HH:mm',
+                              ).format(_startTime!),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _pickEndTime,
-                        child: Text(_endTime == null
-                            ? "Pick End Time"
-                            : DateFormat('yyyy-MM-dd HH:mm').format(_endTime!)),
+                        child: Text(
+                          _endTime == null
+                              ? "Pick End Time"
+                              : DateFormat(
+                                'yyyy-MM-dd HH:mm',
+                              ).format(_endTime!),
+                        ),
                       ),
                     ),
                   ],
@@ -287,23 +300,26 @@ class _BookingPopupState extends State<BookingPopup> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _checking
-                            ? null
-                            : () {
-                                setState(() => _slotType = '2x');
-                                _checkAvailability();
-                              },
+                        onPressed:
+                            _checking
+                                ? null
+                                : () {
+                                  setState(() => _slotType = '2x');
+                                  _checkAvailability();
+                                },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _slotType == '2x'
-                              ? Colors.green
-                              : _available2x
+                          backgroundColor:
+                              _slotType == '2x'
+                                  ? Colors.green
+                                  : _available2x
                                   ? Colors.teal[100]
                                   : Colors.grey[300],
                         ),
                         child: Text(
                           "2x Speed Slot",
                           style: TextStyle(
-                            color: _slotType == '2x' ? Colors.white : Colors.black,
+                            color:
+                                _slotType == '2x' ? Colors.white : Colors.black,
                           ),
                         ),
                       ),
@@ -311,69 +327,104 @@ class _BookingPopupState extends State<BookingPopup> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _checking
-                            ? null
-                            : () {
-                                setState(() => _slotType = '1x');
-                                _checkAvailability();
-                              },
+                        onPressed:
+                            _checking
+                                ? null
+                                : () {
+                                  setState(() => _slotType = '1x');
+                                  _checkAvailability();
+                                },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _slotType == '1x'
-                              ? Colors.green
-                              : _available1x
+                          backgroundColor:
+                              _slotType == '1x'
+                                  ? Colors.green
+                                  : _available1x
                                   ? Colors.teal[100]
                                   : Colors.grey[300],
                         ),
                         child: Text(
                           "1x Speed Slot",
                           style: TextStyle(
-                            color: _slotType == '1x' ? Colors.white : Colors.black,
+                            color:
+                                _slotType == '1x' ? Colors.white : Colors.black,
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                if (_checking) const LinearProgressIndicator(),
                 const SizedBox(height: 8),
+                if (_checking) const LinearProgressIndicator(),
                 Text(
                   "Total Price: Rs. ${_price.toStringAsFixed(0)}",
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : () async {
-                          setState(() => _isLoading = true);
-                          await _bookNow();
-                          setState(() => _isLoading = false);
-                        },
+                        onPressed:
+                            _isLoading ||
+                                    _vehicleType == null ||
+                                    _plateController.text.trim().isEmpty ||
+                                    _slotType == null ||
+                                    _startTime == null ||
+                                    _endTime == null
+                                ? null
+                                : () async {
+                                  setState(() => _isLoading = true);
+                                  await _bookNow();
+                                  setState(() => _isLoading = false);
+                                },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           minimumSize: const Size(double.infinity, 48),
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                            : const Text('Book Now', style: TextStyle(color: Colors.white)),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Text('Book Now'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Colors.grey[400]!),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
                         ),
-                        child: const Text("Cancel"),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
               ],
             ),
           ),
