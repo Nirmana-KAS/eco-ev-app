@@ -1,13 +1,9 @@
-// lib/features/booking/screens/booking_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({Key? key}) : super(key: key);
@@ -28,6 +24,30 @@ class _BookingScreenState extends State<BookingScreen> {
         .where('userId', isEqualTo: userId)
         .orderBy('endTime', descending: true)
         .snapshots();
+  }
+
+  /// --- NEW: Helper to get lat/lng from station by stationId ---
+  Future<Map<String, double>?> _getStationLatLng(String stationId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('stations')
+          .doc(stationId)
+          .get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        final lat = data['latitude'];
+        final lng = data['longitude'];
+        if (lat != null && lng != null) {
+          return {
+            'latitude': (lat is double) ? lat : double.parse(lat.toString()),
+            'longitude': (lng is double) ? lng : double.parse(lng.toString())
+          };
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -68,25 +88,8 @@ class _BookingScreenState extends State<BookingScreen> {
               final vehicle = data['vehicleType'] ?? '';
               final price = data['price'] ?? '';
               final status = data['status'] ?? '';
-              final lat = data['latitude']?.toString() ?? '';
-              final lng = data['longitude']?.toString() ?? '';
               final bookingId = booking.id;
-
-              // Get latitude and longitude as double (null safe)
-              double? latitude, longitude;
-              try {
-                if (data['latitude'] != null && data['longitude'] != null) {
-                  latitude = data['latitude'] is double
-                      ? data['latitude']
-                      : double.tryParse(data['latitude'].toString());
-                  longitude = data['longitude'] is double
-                      ? data['longitude']
-                      : double.tryParse(data['longitude'].toString());
-                }
-              } catch (_) {
-                latitude = null;
-                longitude = null;
-              }
+              final stationId = data['stationId'] ?? '';
 
               final isEnded = DateTime.now().isAfter(endTime);
 
@@ -265,18 +268,25 @@ class _BookingScreenState extends State<BookingScreen> {
                         const SizedBox(height: 10),
 
                         // Buttons
-                       Row(
+                        Row(
                           children: [
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: isEnded
                                     ? null
                                     : () async {
-                                        final lat = data['latitude']?.toString() ?? '';
-                                        final lng = data['longitude']?.toString() ?? '';
-                                        if (lat.isNotEmpty && lng.isNotEmpty && lat != 'null' && lng != 'null') {
+                                        // Get lat/lng from stations collection using stationId
+                                        if (stationId.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                                content: Text("Station ID missing in booking.")),
+                                          );
+                                          return;
+                                        }
+                                        final stationLatLng = await _getStationLatLng(stationId);
+                                        if (stationLatLng != null) {
                                           final url = Uri.parse(
-                                            "https://www.google.com/maps/search/?api=1&query=$lat,$lng",
+                                            "https://www.google.com/maps/search/?api=1&query=${stationLatLng['latitude']},${stationLatLng['longitude']}",
                                           );
                                           if (await canLaunchUrl(url)) {
                                             await launchUrl(
@@ -289,27 +299,9 @@ class _BookingScreenState extends State<BookingScreen> {
                                             );
                                           }
                                         } else {
-                                          final addressStr = data['stationAddress'] ?? data['address'] ?? '';
-                                          if (addressStr.isNotEmpty) {
-                                            final addressUrl = Uri.encodeComponent(addressStr);
-                                            final url = Uri.parse(
-                                              'https://www.google.com/maps/search/?api=1&query=$addressUrl',
-                                            );
-                                            if (await canLaunchUrl(url)) {
-                                              await launchUrl(
-                                                url,
-                                                mode: LaunchMode.externalApplication,
-                                              );
-                                            } else {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Could not open Maps!")),
-                                              );
-                                            }
-                                          } else {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text("Location not available")),
-                                            );
-                                          }
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text("Location not available")),
+                                          );
                                         }
                                       },
                                 icon: const Icon(Icons.directions, color: Colors.white),
@@ -350,7 +342,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                           context: context,
                                           builder: (context) => AlertDialog(
                                             title: const Text("Cancel Booking?"),
-                                            content: const Text("Are you sure you want to cancel this booking?"),
+                                            content: const Text(
+                                                "Are you sure you want to cancel this booking?"),
                                             actions: [
                                               TextButton(
                                                 child: const Text("No"),

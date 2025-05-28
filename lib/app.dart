@@ -62,6 +62,7 @@ class EcoEvRoot extends StatelessWidget {
         '/booking-history': (context) => const BookingHistoryScreen(),
         '/notifications': (context) => const NotificationScreen(),
         '/stations': (context) => const StationsScreen(),
+        '/booking': (context) => const booking.BookingScreen(),
       },
     );
   }
