@@ -718,31 +718,31 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 30),
 
             // ADMIN DASHBOARD BUTTON
-            FutureBuilder<DocumentSnapshot>(
-              future:
-                  FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                      .get(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const SizedBox();
-                final data = snapshot.data!.data() as Map<String, dynamic>?;
-                if (data != null && data['role'] == 'admin') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.admin_panel_settings),
-                      label: const Text("Admin Dashboard"),
-                      onPressed: () => Navigator.pushNamed(context, '/admin'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF30B27C),
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox();
-              },
-            ),
+            // FutureBuilder<DocumentSnapshot>(
+            //   future:
+            //       FirebaseFirestore.instance
+            //           .collection('users')
+            //           .doc(FirebaseAuth.instance.currentUser!.uid)
+            //           .get(),
+            //   builder: (context, snapshot) {
+            //     if (!snapshot.hasData) return const SizedBox();
+            //     final data = snapshot.data!.data() as Map<String, dynamic>?;
+            //     if (data != null && data['role'] == 'admin') {
+            //       return Padding(
+            //         padding: const EdgeInsets.only(bottom: 12.0),
+            //         child: ElevatedButton.icon(
+            //           icon: const Icon(Icons.admin_panel_settings),
+            //           label: const Text("Admin Dashboard"),
+            //           onPressed: () => Navigator.pushNamed(context, '/admin'),
+            //           style: ElevatedButton.styleFrom(
+            //             backgroundColor: const Color(0xFF30B27C),
+            //           ),
+            //         ),
+            //       );
+            //     }
+            //     return const SizedBox();
+            //   },
+            // ),
           ],
         ),
       ),

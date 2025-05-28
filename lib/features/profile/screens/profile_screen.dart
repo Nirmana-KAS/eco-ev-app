@@ -179,7 +179,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 24,
+                    ),
                     children: [
                       // Profile Photo with edit icon
                       Center(
@@ -188,15 +191,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             CircleAvatar(
                               radius: 52,
                               backgroundColor: Colors.grey[300],
-                              backgroundImage: (photoUrl.isNotEmpty)
-                                  ? NetworkImage(photoUrl)
-                                  : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
+                              backgroundImage:
+                                  (photoUrl.isNotEmpty)
+                                      ? NetworkImage(photoUrl)
+                                      : const AssetImage(
+                                            'assets/profile_placeholder.png',
+                                          )
+                                          as ImageProvider,
                             ),
                             Positioned(
                               bottom: 4,
                               right: 4,
                               child: InkWell(
-                                onTap: _isUploading ? null : _pickAndUploadImage,
+                                onTap:
+                                    _isUploading ? null : _pickAndUploadImage,
                                 borderRadius: BorderRadius.circular(25),
                                 child: Container(
                                   padding: const EdgeInsets.all(7),
@@ -204,20 +212,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.black.withOpacity(0.7),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: _isUploading
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                  child:
+                                      _isUploading
+                                          ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                          : const Icon(
+                                            Icons.edit,
                                             color: Colors.white,
+                                            size: 20,
                                           ),
-                                        )
-                                      : const Icon(
-                                          Icons.edit,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
                                 ),
                               ),
                             ),
@@ -237,10 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 2),
                       Text(
                         email,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 18),
@@ -254,13 +260,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: const EdgeInsets.all(18),
                           child: Column(
                             children: [
-                              _profileRow("Contact", contact, icon: Icons.phone),
+                              _profileRow(
+                                "Contact",
+                                contact,
+                                icon: Icons.phone,
+                              ),
                               const Divider(),
-                              _profileRow("NIC / Passport", nic, icon: Icons.credit_card),
+                              _profileRow(
+                                "NIC / Passport",
+                                nic,
+                                icon: Icons.credit_card,
+                              ),
                               const Divider(),
                               _profileRow("Role", role, icon: Icons.security),
                               const Divider(),
-                              _profileRow("Joined", createdAt, icon: Icons.calendar_today),
+                              _profileRow(
+                                "Joined",
+                                createdAt,
+                                icon: Icons.calendar_today,
+                              ),
                             ],
                           ),
                         ),
@@ -295,6 +313,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         ),
                       ),
+                      // --- Admin Dashboard Button (only for admin role) ---
+                      FutureBuilder<DocumentSnapshot>(
+                        future:
+                            FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(FirebaseAuth.instance.currentUser!.uid)
+                                .get(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox();
+                          final data =
+                              snapshot.data!.data() as Map<String, dynamic>?;
+                          if (data != null && data['role'] == 'admin') {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14.0,
+                              ),
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.admin_panel_settings),
+                                label: const Text("Admin Dashboard"),
+                                onPressed:
+                                    () =>
+                                        Navigator.pushNamed(context, '/admin'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF30B27C),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  minimumSize: const Size(double.infinity, 50),
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox();
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -309,15 +362,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              icon: const Icon(Icons.info_outline, color: Color(0xFF007800)),
+                              icon: const Icon(
+                                Icons.info_outline,
+                                color: Color(0xFF007800),
+                              ),
                               label: const Text(
                                 "About Us",
                                 style: TextStyle(color: Color(0xFF007800)),
                               ),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFF007800), width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                side: const BorderSide(
+                                  color: Color(0xFF007800),
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
                               ),
                               onPressed: _showAboutUsDialog,
                             ),
@@ -325,15 +388,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(width: 14),
                           Expanded(
                             child: OutlinedButton.icon(
-                              icon: const Icon(Icons.feedback_outlined, color: Color(0xFF007800)),
+                              icon: const Icon(
+                                Icons.feedback_outlined,
+                                color: Color(0xFF007800),
+                              ),
                               label: const Text(
                                 "Feedback",
                                 style: TextStyle(color: Color(0xFF007800)),
                               ),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFF007800), width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                side: const BorderSide(
+                                  color: Color(0xFF007800),
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
                               ),
                               onPressed: () {
                                 Navigator.pushNamed(context, '/feedback');
@@ -347,7 +420,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         "Developed by ECO EV Solutions Pvt Ltd\n© 2025 ECO EV App | All rights reserved",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.3),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13,
+                          height: 1.3,
+                        ),
                       ),
                     ],
                   ),
