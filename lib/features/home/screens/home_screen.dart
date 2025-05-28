@@ -470,29 +470,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                 topLeft: Radius.circular(22),
                                 topRight: Radius.circular(22),
                               ),
-                              child: data['cardImageUrl'] != null &&
-                                      (data['cardImageUrl'] as String).isNotEmpty
-                                  ? Image.network(
-                                      data['cardImageUrl'],
-                                      height: 95,
-                                      width: 185,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Container(
-                                      height: 95,
-                                      width: 185,
-                                      color: Colors.grey[200],
-                                      child: const Icon(
-                                        Icons.ev_station,
-                                        size: 38,
-                                        color: Colors.grey,
+                              child:
+                                  data['cardImageUrl'] != null &&
+                                          (data['cardImageUrl'] as String)
+                                              .isNotEmpty
+                                      ? Image.network(
+                                        data['cardImageUrl'],
+                                        height: 95,
+                                        width: 185,
+                                        fit: BoxFit.cover,
+                                      )
+                                      : Container(
+                                        height: 95,
+                                        width: 185,
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.ev_station,
+                                          size: 38,
+                                          color: Colors.grey,
+                                        ),
                                       ),
-                                    ),
                             ),
                             const SizedBox(height: 8),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               child: Text(
                                 'Rs.${data['pricePerHour']}/hour',
                                 style: TextStyle(
@@ -505,43 +508,60 @@ class _HomeScreenState extends State<HomeScreen> {
                             // --- Slot counts & icons row
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 1),
+                                horizontal: 14,
+                                vertical: 1,
+                              ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.flash_on,
-                                      color: Color(0xFFFFA800), size: 15),
+                                  Icon(
+                                    Icons.flash_on,
+                                    color: Color(0xFFFFA800),
+                                    size: 15,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     '2x: ',
                                     style: TextStyle(
-                                        color: Color(0xFFFFA800), fontSize: 12),
+                                      color: Color(0xFFFFA800),
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   Text(
                                     '$slots2x',
                                     style: TextStyle(
-                                        color: Color(0xFFFFA800),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12),
+                                      color: Color(0xFFFFA800),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Icon(Icons.flash_on,
-                                      color: Color(0xFFFFA800), size: 15),
+                                  Icon(
+                                    Icons.flash_on,
+                                    color: Color(0xFFFFA800),
+                                    size: 15,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     '1x: ',
                                     style: TextStyle(
-                                        color: Color(0xFFFFA800), fontSize: 12),
+                                      color: Color(0xFFFFA800),
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   Text(
                                     '$slots1x',
                                     style: TextStyle(
-                                        color: Color(0xFFFFA800),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12),
+                                      color: Color(0xFFFFA800),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   const SizedBox(width: 10),
-                                  Icon(Icons.ev_station,
-                                      color: Colors.green[600], size: 16),
+                                  Icon(
+                                    Icons.ev_station,
+                                    color: Colors.green[600],
+                                    size: 16,
+                                  ),
                                   const SizedBox(width: 2),
                                   Text(
                                     '$totalSlots',
@@ -556,11 +576,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             // --- Address and Direction
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 1,
+                              ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.location_on, color: Colors.teal[400], size: 14),
+                                  Icon(
+                                    Icons.location_on,
+                                    color: Colors.teal[400],
+                                    size: 14,
+                                  ),
                                   const SizedBox(width: 2),
                                   Expanded(
                                     child: Text(
@@ -573,8 +599,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: () =>
-                                        _openDirection(data['address'] ?? ''),
+                                    onPressed:
+                                        () => _openDirection(
+                                          data['address'] ?? '',
+                                        ),
                                     style: TextButton.styleFrom(
                                       padding: EdgeInsets.zero,
                                       minimumSize: const Size(50, 22),
@@ -605,31 +633,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                       borderRadius: BorderRadius.circular(18),
                                     ),
                                     elevation: 2,
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
                                   ),
                                   onPressed: () {
                                     showModalBottomSheet(
                                       context: context,
                                       isScrollControlled: true,
-                                      backgroundColor: const Color.fromARGB(255, 44, 43, 43),
-                                      builder: (_) => Material(
-                                        borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(22),
-                                        ),
-                                        child: BookingPopup(
-                                          stationData: data,
-                                          stationId: stationId,
-                                        ),
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        44,
+                                        43,
+                                        43,
                                       ),
+                                      builder:
+                                          (_) => Material(
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(22),
+                                                ),
+                                            child: BookingPopup(
+                                              stationData: data,
+                                              stationId: stationId,
+                                            ),
+                                          ),
                                     );
                                   },
                                   child: const Text(
                                     'Book Now',
                                     style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 15),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -698,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: const Text("Admin Dashboard"),
                       onPressed: () => Navigator.pushNamed(context, '/admin'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF30B27C)
+                        backgroundColor: const Color(0xFF30B27C),
                       ),
                     ),
                   );
@@ -715,11 +752,17 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedTab,
         onTap: (idx) {
           setState(() => _selectedTab = idx);
-          if (idx == 1) { // Stations tab
+          if (idx == 1) {
+            // Stations tab
             Navigator.pushNamed(context, '/stations');
-          } else if (idx == 2) { // Booking tab
-            Navigator.pushNamed(context, '/booking');
-          } else if (idx == 3) { // Profile tab
+          } else if (idx == 2) {
+            // Booking tab
+            Navigator.pushNamed(
+              context,
+              '/booking',
+            ); // <-- This opens BookingScreen
+          } else if (idx == 3) {
+            // Profile tab
             Navigator.pushNamed(context, '/profile');
           }
           // Home (idx == 0) does nothing because you're already on Home.
@@ -737,7 +780,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_rounded),
-            label: "Booking",
+            label: "Booking", // <-- This is your booking button
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_rounded),
