@@ -1,5 +1,3 @@
-// lib/features/home/screens/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +7,7 @@ import 'package:eco_ev_app/features/station/screens/station_search_delegate.dart
 import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
 import 'package:eco_ev_app/features/booking/widgets/booking_popup.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:math';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,15 +20,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedTab = 0;
   String _searchQuery = '';
+  Position? _userPosition;
+  String _currentAddress = "Loading location...";
+  String _userName = "";
+
+  // UI colors
   final Color green = const Color(0xFF138808);
   final Color black = const Color(0xFF23272E);
   final Color offWhite = const Color(0xFFFAFAFA);
   final Color mediumGrey = const Color(0xFFECECEC);
   final Color darkGrey = const Color(0xFF484848);
-
-  String _currentAddress = "Loading location...";
-  String _userName = "";
-  Position? _userPosition;
 
   @override
   void initState() {
@@ -53,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      _userPosition = position;
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
@@ -74,12 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
         setState(() {
           _currentAddress = area.isNotEmpty ? area : "Unknown location";
-          _userPosition = position;
         });
       } else {
         setState(() {
           _currentAddress = "Unknown location";
-          _userPosition = position;
         });
       }
     } catch (e) {
@@ -113,17 +112,38 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _openDirectionWithLatLng(double? lat, double? lng) async {
-    if (lat == null || lng == null) return;
+  void _openDirectionWithLatLng(double lat, double lng) async {
     final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+      "https://www.google.com/maps/search/?api=1&query=$lat,$lng",
     );
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     }
   }
 
-  // Check if a station is open now based on openingHours string, e.g. "7:00 AM - 10:00 PM"
+  double? _calculateDistanceKm(double? stationLat, double? stationLng) {
+    if (_userPosition == null || stationLat == null || stationLng == null)
+      return null;
+    final double lat1 = _userPosition!.latitude;
+    final double lon1 = _userPosition!.longitude;
+    final double lat2 = stationLat;
+    final double lon2 = stationLng;
+    const double earthRadius = 6371;
+    final double dLat = _toRadians(lat2 - lat1);
+    final double dLon = _toRadians(lon2 - lon1);
+    final double a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRadians(lat1)) *
+            cos(_toRadians(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
+  }
+
+  double _toRadians(double degree) => degree * pi / 180;
+
+  // Checks if station is open now (e.g. "7:00 AM - 10:00 PM")
   bool _isStationOpenNow(Map<String, dynamic> data) {
     try {
       if (data['openingHours'] == null) return false;
@@ -132,67 +152,45 @@ class _HomeScreenState extends State<HomeScreen> {
       final parts = str.split('-');
       if (parts.length != 2) return false;
 
-      final format = DateFormat('h:mm a');
-      String openStr = parts[0].trim();
-      String closeStr = parts[1].trim();
-      openStr = openStr.replaceAll('\u202F', ' ');
-      closeStr = closeStr.replaceAll('\u202F', ' ');
-
-      final open = format.parse(openStr);
-      final close = format.parse(closeStr);
+      final open = _parseTime(parts[0].trim());
+      final close = _parseTime(parts[1].trim());
+      if (open == null || close == null) return false;
       final nowTime = TimeOfDay(hour: now.hour, minute: now.minute);
-      final openTime = TimeOfDay(hour: open.hour, minute: open.minute);
-      final closeTime = TimeOfDay(hour: close.hour, minute: close.minute);
 
-      if ((closeTime.hour < openTime.hour) ||
-          (closeTime.hour == openTime.hour &&
-              closeTime.minute < openTime.minute)) {
-        // Overnight opening
-        return (nowTime.hour > openTime.hour ||
-                (nowTime.hour == openTime.hour &&
-                    nowTime.minute >= openTime.minute)) ||
-            (nowTime.hour < closeTime.hour ||
-                (nowTime.hour == closeTime.hour &&
-                    nowTime.minute <= closeTime.minute));
+      bool isOvernight =
+          (close.hour < open.hour) ||
+          (close.hour == open.hour && close.minute < open.minute);
+
+      if (isOvernight) {
+        return (nowTime.hour > open.hour ||
+                (nowTime.hour == open.hour && nowTime.minute >= open.minute)) ||
+            (nowTime.hour < close.hour ||
+                (nowTime.hour == close.hour && nowTime.minute <= close.minute));
       } else {
-        // Normal daytime
-        return (nowTime.hour > openTime.hour ||
-                (nowTime.hour == openTime.hour &&
-                    nowTime.minute >= openTime.minute)) &&
-            (nowTime.hour < closeTime.hour ||
-                (nowTime.hour == closeTime.hour &&
-                    nowTime.minute <= closeTime.minute));
+        return (nowTime.hour > open.hour ||
+                (nowTime.hour == open.hour && nowTime.minute >= open.minute)) &&
+            (nowTime.hour < close.hour ||
+                (nowTime.hour == close.hour && nowTime.minute <= close.minute));
       }
     } catch (e) {
       return false;
     }
   }
 
-  double? _stationDistance(Map<String, dynamic> data) {
+  TimeOfDay? _parseTime(String input) {
     try {
-      if (_userPosition == null ||
-          data['latitude'] == null ||
-          data['longitude'] == null)
-        return null;
-      final lat =
-          data['latitude'] is double
-              ? data['latitude']
-              : double.tryParse(data['latitude'].toString());
-      final lng =
-          data['longitude'] is double
-              ? data['longitude']
-              : double.tryParse(data['longitude'].toString());
-      if (lat == null || lng == null) return null;
-      return Geolocator.distanceBetween(
-            _userPosition!.latitude,
-            _userPosition!.longitude,
-            lat,
-            lng,
-          ) /
-          1000.0;
-    } catch (_) {
-      return null;
-    }
+      final format = RegExp(r'(\d+):(\d+)\s*([aApP][mM])');
+      final match = format.firstMatch(input);
+      if (match != null) {
+        int hour = int.parse(match.group(1)!);
+        int minute = int.parse(match.group(2)!);
+        final ampm = match.group(3)!.toLowerCase();
+        if (ampm == 'pm' && hour != 12) hour += 12;
+        if (ampm == 'am' && hour == 12) hour = 0;
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+    } catch (_) {}
+    return null;
   }
 
   @override
@@ -409,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // --- Firestore-powered Station Cards ---
             SizedBox(
-              height: 240,
+              height: 260, // <-- INCREASED HEIGHT to fix overflow
               child: StreamBuilder<QuerySnapshot>(
                 stream:
                     FirebaseFirestore.instance
@@ -420,59 +418,49 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  var docs = snapshot.data!.docs;
+                  List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
 
-                  // Filter for open now & sort by distance
-                  List<QueryDocumentSnapshot> filteredDocs =
+                  // Only show stations open now and sort by distance
+                  docs =
                       docs.where((doc) {
                         final data = doc.data() as Map<String, dynamic>;
                         return _isStationOpenNow(data);
                       }).toList();
+                  docs.sort((a, b) {
+                    final ax = a.data() as Map<String, dynamic>;
+                    final bx = b.data() as Map<String, dynamic>;
+                    final ad =
+                        _calculateDistanceKm(
+                          ax['latitude']?.toDouble(),
+                          ax['longitude']?.toDouble(),
+                        ) ??
+                        99999;
+                    final bd =
+                        _calculateDistanceKm(
+                          bx['latitude']?.toDouble(),
+                          bx['longitude']?.toDouble(),
+                        ) ??
+                        99999;
+                    return ad.compareTo(bd);
+                  });
 
-                  // Sort by distance
-                  if (_userPosition != null) {
-                    filteredDocs.sort((a, b) {
-                      final ad =
-                          _stationDistance(a.data() as Map<String, dynamic>) ??
-                          double.infinity;
-                      final bd =
-                          _stationDistance(b.data() as Map<String, dynamic>) ??
-                          double.infinity;
-                      return ad.compareTo(bd);
-                    });
-                  }
-
-                  if (filteredDocs.isEmpty) {
-                    return const Center(
-                      child: Text("No open stations found nearby."),
-                    );
+                  if (docs.isEmpty) {
+                    return const Center(child: Text("No open stations found."));
                   }
 
                   return ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: filteredDocs.length,
+                    itemCount: docs.length,
                     itemBuilder: (context, i) {
-                      final data =
-                          filteredDocs[i].data() as Map<String, dynamic>;
-                      final stationId = filteredDocs[i].id;
+                      final data = docs[i].data() as Map<String, dynamic>;
+                      final stationId = docs[i].id;
 
                       int slots2x = data['slots2x'] ?? 0;
                       int slots1x = data['slots1x'] ?? 0;
                       int totalSlots = slots2x + slots1x;
 
-                      double? lat =
-                          data['latitude'] is double
-                              ? data['latitude']
-                              : double.tryParse(
-                                data['latitude']?.toString() ?? '',
-                              );
-                      double? lng =
-                          data['longitude'] is double
-                              ? data['longitude']
-                              : double.tryParse(
-                                data['longitude']?.toString() ?? '',
-                              );
-                      double? distanceKm = _stationDistance(data);
+                      final lat = data['latitude']?.toDouble();
+                      final lng = data['longitude']?.toDouble();
 
                       return Container(
                         width: 185,
@@ -532,6 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
+                            // --- Slot counts & icons row
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -600,6 +589,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ),
+                            // --- Address and Direction (Direction moved here!)
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -623,26 +613,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (distanceKm != null && distanceKm < 99999)
-                                    Text(
-                                      "${distanceKm.toStringAsFixed(1)} km",
-                                      style: TextStyle(
-                                        color: Colors.teal[700],
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  // DIRECTION BUTTON in red-marked place!
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.directions,
+                                      color: Colors.teal[700],
+                                      size: 20,
                                     ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 1,
-                              ),
-                              child: Row(
-                                children: [
-                                  TextButton(
                                     onPressed:
                                         (lat != null && lng != null)
                                             ? () => _openDirectionWithLatLng(
@@ -650,26 +627,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                               lng,
                                             )
                                             : null,
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: const Size(50, 22),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      "Direction",
-                                      style: TextStyle(
-                                        color: Colors.teal[700],
-                                        fontSize: 12,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
+                                    tooltip: "Direction",
                                   ),
                                 ],
                               ),
                             ),
+                            // --- Book Now Button
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                2,
+                                14,
+                                10,
+                              ), // 8 -> 2 to reduce gap above Book Now
                               child: SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -725,9 +695,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
-            // Recommendations (you can further upgrade to use Firestore here)
+            // Recommendations Title Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -736,15 +706,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: black,
+                    color: Colors.black87,
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/stations');
+                  },
                   child: Text(
                     "See all",
                     style: TextStyle(
-                      color: green,
+                      color: Colors.teal[600],
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -752,43 +724,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            SizedBox(
-              height: 150,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _recommendCard(image: 'assets/charging3.jpg', isTop: true),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
 
-            // ADMIN DASHBOARD BUTTON
-            // FutureBuilder<DocumentSnapshot>(
-            //   future:
-            //       FirebaseFirestore.instance
-            //           .collection('users')
-            //           .doc(FirebaseAuth.instance.currentUser!.uid)
-            //           .get(),
-            //   builder: (context, snapshot) {
-            //     if (!snapshot.hasData) return const SizedBox();
-            //     final data = snapshot.data!.data() as Map<String, dynamic>?;
-            //     if (data != null && data['role'] == 'admin') {
-            //       return Padding(
-            //         padding: const EdgeInsets.only(bottom: 12.0),
-            //         child: ElevatedButton.icon(
-            //           icon: const Icon(Icons.admin_panel_settings),
-            //           label: const Text("Admin Dashboard"),
-            //           onPressed: () => Navigator.pushNamed(context, '/admin'),
-            //           style: ElevatedButton.styleFrom(
-            //             backgroundColor: const Color(0xFF30B27C),
-            //           ),
-            //         ),
-            //       );
-            //     }
-            //     return const SizedBox();
-            //   },
-            // ),
+            // Recommendations Card List (vertically scrollable)
+            StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance
+                      .collection('stations')
+                      .orderBy('createdAt', descending: false) // oldest first
+                      .limit(3)
+                      .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData)
+                  return const Center(child: CircularProgressIndicator());
+                final recommendedStations = snapshot.data!.docs;
+                return Column(
+                  children: List.generate(recommendedStations.length, (index) {
+                    final station = recommendedStations[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 12.0,
+                      ), // Prevent overflow
+                      child: RecommendationsCard(
+                        data: station.data() as Map<String, dynamic>,
+                        stationId: station.id,
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -805,7 +769,6 @@ class _HomeScreenState extends State<HomeScreen> {
           } else if (idx == 3) {
             Navigator.pushNamed(context, '/profile');
           }
-          // Home (idx == 0) does nothing because you're already on Home.
         },
         selectedItemColor: green,
         unselectedItemColor: darkGrey,
@@ -825,73 +788,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_rounded),
             label: "Profile",
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Recommendation Card Widget
-  Widget _recommendCard({required String image, required bool isTop}) {
-    return Container(
-      width: 320,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: mediumGrey.withOpacity(0.4),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Image.asset(
-              image,
-              height: 150,
-              width: 320,
-              fit: BoxFit.cover,
-            ),
-          ),
-          if (isTop)
-            Positioned(
-              top: 10,
-              left: 10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: green,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  "Top",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.favorite_border, color: green, size: 20),
-              ),
-            ),
           ),
         ],
       ),
@@ -939,6 +835,255 @@ class _HomeScreenState extends State<HomeScreen> {
         radius: 22,
         backgroundColor: Colors.grey[300],
         backgroundImage: const AssetImage('assets/profile_placeholder.png'),
+      ),
+    );
+  }
+}
+
+// Recommendations Card Widget
+class RecommendationsCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final String stationId;
+
+  const RecommendationsCard({
+    super.key,
+    required this.data,
+    required this.stationId,
+  });
+
+  bool isOpenNow(String openingHours) {
+    try {
+      if (openingHours.isEmpty) return false;
+      final now = DateTime.now();
+      final parts = openingHours.replaceAll('\u202F', ' ').split('-');
+      if (parts.length != 2) return false;
+      final format = DateFormat('h:mm a');
+      final open = format.parse(parts[0].trim());
+      final close = format.parse(parts[1].trim());
+      final nowTime = TimeOfDay(hour: now.hour, minute: now.minute);
+      final openTime = TimeOfDay(hour: open.hour, minute: open.minute);
+      final closeTime = TimeOfDay(hour: close.hour, minute: close.minute);
+
+      if ((closeTime.hour < openTime.hour) ||
+          (closeTime.hour == openTime.hour &&
+              closeTime.minute < openTime.minute)) {
+        return (nowTime.hour > openTime.hour ||
+                (nowTime.hour == openTime.hour &&
+                    nowTime.minute >= openTime.minute)) ||
+            (nowTime.hour < closeTime.hour ||
+                (nowTime.hour == closeTime.hour &&
+                    nowTime.minute <= closeTime.minute));
+      } else {
+        return (nowTime.hour > openTime.hour ||
+                (nowTime.hour == openTime.hour &&
+                    nowTime.minute >= openTime.minute)) &&
+            (nowTime.hour < closeTime.hour ||
+                (nowTime.hour == closeTime.hour &&
+                    nowTime.minute <= closeTime.minute));
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String name = data['name'] ?? '';
+    final String address = data['address'] ?? '';
+    final double latitude = (data['latitude'] as num?)?.toDouble() ?? 0.0;
+    final double longitude = (data['longitude'] as num?)?.toDouble() ?? 0.0;
+    final String openingHours = data['openingHours'] ?? '';
+    final bool open = isOpenNow(openingHours);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => StationDetailScreen(
+                  stationData: data,
+                  stationId: stationId,
+                ),
+          ),
+        );
+      },
+      child: Container(
+        width: 320,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Station image with top-right star badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
+                  ),
+                  child:
+                      data['cardImageUrl'] != null &&
+                              (data['cardImageUrl'] as String).isNotEmpty
+                          ? Image.network(
+                            data['cardImageUrl'],
+                            height: 120,
+                            width: 320,
+                            fit: BoxFit.cover,
+                          )
+                          : Container(
+                            height: 120,
+                            width: 320,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.ev_station,
+                              size: 38,
+                              color: Colors.grey,
+                            ),
+                          ),
+                ),
+                Positioned(
+                  top: 13,
+                  right: 13,
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.star, color: Colors.amber, size: 32),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.teal[400],
+                        size: 15,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          address,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      InkWell(
+                        onTap: () async {
+                          final url = Uri.parse(
+                            "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude",
+                          );
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url);
+                          }
+                        },
+                        child: Icon(
+                          Icons.directions,
+                          color: Colors.teal[600],
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(
+                        open ? Icons.check_circle : Icons.cancel,
+                        color: open ? Colors.green : Colors.red,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        open ? 'Open now' : 'Closed',
+                        style: TextStyle(
+                          color: open ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 11),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        minimumSize: const Size(double.infinity, 38),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.white,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(22),
+                            ),
+                          ),
+                          builder:
+                              (_) => BookingPopup(
+                                stationData: data,
+                                stationId: stationId,
+                              ),
+                        );
+                      },
+                      child: const Text(
+                        'Book Now',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

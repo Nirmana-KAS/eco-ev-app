@@ -1,3 +1,5 @@
+// lib/features/station/screens/station_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:eco_ev_app/features/booking/widgets/booking_popup.dart';
