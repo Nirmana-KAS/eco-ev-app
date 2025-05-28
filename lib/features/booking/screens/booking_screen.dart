@@ -308,10 +308,11 @@ class _BookingScreenState extends State<BookingScreen> {
                                 label: const Text("Direction"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
+                                    borderRadius: BorderRadius.circular(25),
                                   ),
-                                  minimumSize: const Size(double.infinity, 48),
+                                  minimumSize: const Size(double.infinity, 40),
                                   elevation: 1.5,
                                   textStyle: const TextStyle(
                                     fontWeight: FontWeight.w600,
@@ -324,16 +325,13 @@ class _BookingScreenState extends State<BookingScreen> {
                               child: OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.red,
-                                  side: BorderSide(color: Colors.red[100]!),
+                                  side: const BorderSide(color: Colors.red, width: 1),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(25),
                                   ),
-                                  minimumSize: const Size(90, 34),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 0,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
+                                  minimumSize: const Size(120, 40), // 🔹 New size
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // 🔹 Optional: adjust for more spacing
+                                  visualDensity: VisualDensity.standard,
                                 ),
                                 onPressed: isEnded
                                     ? null
