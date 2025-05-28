@@ -30,12 +30,12 @@ class WelcomeScreen extends StatelessWidget {
                   height: 54,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF30B27C),
+                      backgroundColor: const Color(0xFF007800), // <-- Changed to #007800
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 8, // <-- 3D effect
-                      shadowColor: const Color(0xFF30B27C).withOpacity(0.4), // <-- Soft #30B27C shadow
+                      shadowColor: const Color(0xFF007800).withOpacity(0.4), // <-- Soft #007800 shadow
                     ),
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/sign-in');

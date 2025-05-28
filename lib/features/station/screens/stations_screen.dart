@@ -35,7 +35,8 @@ class _StationsScreenState extends State<StationsScreen> {
       if (permission == LocationPermission.whileInUse ||
           permission == LocationPermission.always) {
         final pos = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.medium);
+          desiredAccuracy: LocationAccuracy.medium,
+        );
         setState(() {
           _userPosition = pos;
         });
@@ -49,7 +50,10 @@ class _StationsScreenState extends State<StationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stations', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Stations',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
@@ -77,10 +81,11 @@ class _StationsScreenState extends State<StationsScreen> {
             // Stations List
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('stations')
-                    .orderBy('createdAt', descending: true)
-                    .snapshots(),
+                stream:
+                    FirebaseFirestore.instance
+                        .collection('stations')
+                        .orderBy('createdAt', descending: true)
+                        .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
@@ -101,10 +106,11 @@ class _StationsScreenState extends State<StationsScreen> {
                     });
                   } else if (_selectedChip == 1) {
                     // Availability: Show only open stations
-                    docs = docs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      return _isStationOpenNow(data);
-                    }).toList();
+                    docs =
+                        docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          return _isStationOpenNow(data);
+                        }).toList();
                   } else if (_selectedChip == 2) {
                     // Newest: Already sorted by createdAt desc
                   }
@@ -113,7 +119,10 @@ class _StationsScreenState extends State<StationsScreen> {
                     return const Center(child: Text('No stations found.'));
                   }
                   return ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     itemCount: docs.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 14),
                     itemBuilder: (context, i) {
@@ -136,16 +145,10 @@ class _StationsScreenState extends State<StationsScreen> {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () async {
-        await showSearch(
-          context: context,
-          delegate: StationSearchDelegate(),
-        );
+        await showSearch(context: context, delegate: StationSearchDelegate());
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
@@ -176,12 +179,23 @@ class _StationsScreenState extends State<StationsScreen> {
     try {
       if (_userPosition == null ||
           data['latitude'] == null ||
-          data['longitude'] == null) return 999999;
-      final lat = data['latitude'] is double ? data['latitude'] : double.tryParse(data['latitude'].toString());
-      final lng = data['longitude'] is double ? data['longitude'] : double.tryParse(data['longitude'].toString());
+          data['longitude'] == null)
+        return 999999;
+      final lat =
+          data['latitude'] is double
+              ? data['latitude']
+              : double.tryParse(data['latitude'].toString());
+      final lng =
+          data['longitude'] is double
+              ? data['longitude']
+              : double.tryParse(data['longitude'].toString());
       if (lat == null || lng == null) return 999999;
       return Geolocator.distanceBetween(
-              _userPosition!.latitude, _userPosition!.longitude, lat, lng) /
+            _userPosition!.latitude,
+            _userPosition!.longitude,
+            lat,
+            lng,
+          ) /
           1000.0; // km
     } catch (_) {
       return 999999;
@@ -189,47 +203,55 @@ class _StationsScreenState extends State<StationsScreen> {
   }
 
   // --- Check if station open now (24h format) ---
-bool _isStationOpenNow(Map<String, dynamic> data) {
-  try {
-    if (data['openingHours'] == null) return false;
-    final now = DateTime.now();
-    // e.g. "8:00 AM - 10:00 PM" (may contain U+202F narrow no-break space)
-    String str = data['openingHours'].toString().replaceAll('\u202F', ' '); // Replace narrow space with normal space
-    final parts = str.split('-');
-    if (parts.length != 2) return false;
+  bool _isStationOpenNow(Map<String, dynamic> data) {
+    try {
+      if (data['openingHours'] == null) return false;
+      final now = DateTime.now();
+      // e.g. "8:00 AM - 10:00 PM" (may contain U+202F narrow no-break space)
+      String str = data['openingHours'].toString().replaceAll(
+        '\u202F',
+        ' ',
+      ); // Replace narrow space with normal space
+      final parts = str.split('-');
+      if (parts.length != 2) return false;
 
-    final format = DateFormat('h:mm a');
-    // Clean both times
-    String openStr = parts[0].trim();
-    String closeStr = parts[1].trim();
-    openStr = openStr.replaceAll('\u202F', ' ');
-    closeStr = closeStr.replaceAll('\u202F', ' ');
+      final format = DateFormat('h:mm a');
+      // Clean both times
+      String openStr = parts[0].trim();
+      String closeStr = parts[1].trim();
+      openStr = openStr.replaceAll('\u202F', ' ');
+      closeStr = closeStr.replaceAll('\u202F', ' ');
 
-    final open = format.parse(openStr);
-    final close = format.parse(closeStr);
-    final nowTime = TimeOfDay(hour: now.hour, minute: now.minute);
-    final openTime = TimeOfDay(hour: open.hour, minute: open.minute);
-    final closeTime = TimeOfDay(hour: close.hour, minute: close.minute);
+      final open = format.parse(openStr);
+      final close = format.parse(closeStr);
+      final nowTime = TimeOfDay(hour: now.hour, minute: now.minute);
+      final openTime = TimeOfDay(hour: open.hour, minute: open.minute);
+      final closeTime = TimeOfDay(hour: close.hour, minute: close.minute);
 
-    // Handle overnight opening (e.g. 8:00 PM - 2:00 AM)
-    if ((closeTime.hour < openTime.hour) ||
-        (closeTime.hour == openTime.hour && closeTime.minute < openTime.minute)) {
-      // Overnight
-      return (nowTime.hour > openTime.hour ||
-              (nowTime.hour == openTime.hour && nowTime.minute >= openTime.minute)) ||
-          (nowTime.hour < closeTime.hour ||
-              (nowTime.hour == closeTime.hour && nowTime.minute <= closeTime.minute));
-    } else {
-      // Normal daytime
-      return (nowTime.hour > openTime.hour ||
-              (nowTime.hour == openTime.hour && nowTime.minute >= openTime.minute)) &&
-          (nowTime.hour < closeTime.hour ||
-              (nowTime.hour == closeTime.hour && nowTime.minute <= closeTime.minute));
+      // Handle overnight opening (e.g. 8:00 PM - 2:00 AM)
+      if ((closeTime.hour < openTime.hour) ||
+          (closeTime.hour == openTime.hour &&
+              closeTime.minute < openTime.minute)) {
+        // Overnight
+        return (nowTime.hour > openTime.hour ||
+                (nowTime.hour == openTime.hour &&
+                    nowTime.minute >= openTime.minute)) ||
+            (nowTime.hour < closeTime.hour ||
+                (nowTime.hour == closeTime.hour &&
+                    nowTime.minute <= closeTime.minute));
+      } else {
+        // Normal daytime
+        return (nowTime.hour > openTime.hour ||
+                (nowTime.hour == openTime.hour &&
+                    nowTime.minute >= openTime.minute)) &&
+            (nowTime.hour < closeTime.hour ||
+                (nowTime.hour == closeTime.hour &&
+                    nowTime.minute <= closeTime.minute));
+      }
+    } catch (e) {
+      return false;
     }
-  } catch (e) {
-    return false;
   }
-}
 }
 
 // --- Station Card Widget ---
@@ -274,22 +296,27 @@ class _StationCard extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => StationDetailScreen(
-                        stationData: data,
-                        stationId: docId,
-                      ),
+                      builder:
+                          (_) => StationDetailScreen(
+                            stationData: data,
+                            stationId: docId,
+                          ),
                     ),
                   );
                 },
                 child: CircleAvatar(
                   radius: 38,
                   backgroundColor: Colors.grey[200],
-                  backgroundImage: (logoUrl.isNotEmpty)
-                      ? NetworkImage(logoUrl)
-                      : null,
-                  child: (logoUrl.isEmpty)
-                      ? const Icon(Icons.ev_station, size: 40, color: Colors.grey)
-                      : null,
+                  backgroundImage:
+                      (logoUrl.isNotEmpty) ? NetworkImage(logoUrl) : null,
+                  child:
+                      (logoUrl.isEmpty)
+                          ? const Icon(
+                            Icons.ev_station,
+                            size: 40,
+                            color: Colors.grey,
+                          )
+                          : null,
                 ),
               ),
               const SizedBox(width: 16),
@@ -321,7 +348,11 @@ class _StationCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Icon(Icons.ev_station, color: Colors.teal[700], size: 17),
+                        Icon(
+                          Icons.ev_station,
+                          color: Colors.teal[700],
+                          size: 17,
+                        ),
                         Text(
                           '$totalSlots',
                           style: const TextStyle(fontSize: 13),
@@ -332,13 +363,18 @@ class _StationCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.directions, color: Colors.teal[400], size: 19),
+                        Icon(
+                          Icons.directions,
+                          color: Colors.teal[400],
+                          size: 19,
+                        ),
                         const SizedBox(width: 3),
                         Flexible(
                           child: InkWell(
                             onTap: () async {
                               String query = Uri.encodeComponent(address);
-                              String googleUrl = 'https://www.google.com/maps/search/?api=1&query=$query';
+                              String googleUrl =
+                                  'https://www.google.com/maps/search/?api=1&query=$query';
                               if (await canLaunchUrl(Uri.parse(googleUrl))) {
                                 await launchUrl(Uri.parse(googleUrl));
                               }
@@ -372,10 +408,11 @@ class _StationCard extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => StationDetailScreen(
-                    stationData: data,
-                    stationId: docId,
-                  ),
+                  builder:
+                      (_) => StationDetailScreen(
+                        stationData: data,
+                        stationId: docId,
+                      ),
                 ),
               );
             },
@@ -402,20 +439,21 @@ class _StationCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                backgroundColor: const Color(0xFF30B27C),
-                foregroundColor: const Color(0xFFFFFFFF), // white text/icon color
+                backgroundColor: Colors.teal.withOpacity(0.09),
+                foregroundColor: Colors.teal[700],
                 side: BorderSide.none,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               onPressed: () {
                 // Open booking popup
                 showDialog(
                   context: context,
-                  builder: (context) => BookingPopup(
-                    stationData: data,
-                    stationId: docId,
-                  ),
+                  builder:
+                      (context) =>
+                          BookingPopup(stationData: data, stationId: docId),
                 );
               },
               child: const Text(
@@ -453,15 +491,22 @@ class _FilterChips extends StatelessWidget {
               onTap: () => onChanged(i),
               child: Container(
                 decoration: BoxDecoration(
-                  color: selected == i ? const Color(0xFFE1F5E5) : Colors.grey[100],
+                  color:
+                      selected == i
+                          ? const Color(0xFFE1F5E5)
+                          : Colors.grey[100],
                   borderRadius: BorderRadius.circular(18),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Text(
                   chips[i],
                   style: TextStyle(
                     color: selected == i ? Colors.teal[700] : Colors.grey[600],
-                    fontWeight: selected == i ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        selected == i ? FontWeight.bold : FontWeight.normal,
                     fontSize: 15,
                   ),
                 ),

@@ -717,10 +717,12 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _selectedTab = idx);
           if (idx == 1) { // Stations tab
             Navigator.pushNamed(context, '/stations');
+          } else if (idx == 2) { // Booking tab
+            Navigator.pushNamed(context, '/booking');
           } else if (idx == 3) { // Profile tab
             Navigator.pushNamed(context, '/profile');
           }
-          // Add logic for other tabs if needed
+          // Home (idx == 0) does nothing because you're already on Home.
         },
         selectedItemColor: green,
         unselectedItemColor: darkGrey,

@@ -64,7 +64,7 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 hintText: "Email",
                 filled: true,
-                fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
+                fillColor: const Color.fromARGB(255, 241, 248, 237),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
@@ -82,7 +82,7 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 hintText: "Enter your password",
                 filled: true,
-                fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
+                fillColor: const Color.fromARGB(255, 241, 248, 237),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
@@ -123,12 +123,12 @@ class _SignInScreenState extends State<SignInScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF30B27C), // <-- Changed to #30B27C
+                  backgroundColor: const Color(0xFF007800), // <-- Changed to #007800
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25), // More rounded
                   ),
                   elevation: 8, // 3D effect
-                  shadowColor: const Color(0xFF30B27C),
+                  shadowColor: const Color(0xFF007800).withOpacity(0.4), // Soft #007800 shadow
                 ),
                 onPressed: _isLoading ? null : _login,
                 child: _isLoading
@@ -206,7 +206,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     TextSpan(
                       text: "Register Now",
                       style: const TextStyle(
-                        color: Color(0xFF30B27C),
+                        color: Color(0xFF138808),
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                         letterSpacing: 0.2,

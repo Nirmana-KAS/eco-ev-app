@@ -138,7 +138,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   CircleAvatar(
                     radius: 44,
-                    backgroundColor: Color(0x1A30B27C), // #30B27C with 10% opacity
+                    backgroundColor: Colors.grey[300],
                     backgroundImage: _selectedImage != null
                         ? FileImage(_selectedImage!)
                         : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
@@ -214,11 +214,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF30B27C),
+                  backgroundColor: const Color(0xFF61B15A),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
-                  shadowColor: const Color(0xFF30B27C).withOpacity(0.4),
+                  shadowColor: Colors.green.withOpacity(0.4),
                 ),
                 onPressed: _isUploadingImage || _isLoading ? null : _register,
                 child: (_isUploadingImage || _isLoading)
@@ -244,7 +244,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: const Text(
                     "Login Now",
                     style: TextStyle(
-                      color: Color(0xFF30B27C),
+                      color: Color(0xFF138808),
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -269,7 +269,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
+        fillColor: const Color.fromARGB(255, 241, 248, 237),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
@@ -294,7 +294,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color(0x1A30B27C), // #30B27C with 10% opacity
+        fillColor: const Color.fromARGB(255, 241, 248, 237),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,

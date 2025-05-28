@@ -408,7 +408,7 @@ class _BookingCountdownState extends State<_BookingCountdown> {
   void initState() {
     super.initState();
     _update();
-    timer = Timer.periodic(const Duration(seconds: 1), () => _update());
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _update());
   }
 
   void _update() {
