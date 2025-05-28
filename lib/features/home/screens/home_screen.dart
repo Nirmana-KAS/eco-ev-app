@@ -9,6 +9,7 @@ import 'package:eco_ev_app/features/station/screens/station_search_delegate.dart
 import 'package:eco_ev_app/features/station/screens/station_detail_screen.dart';
 import 'package:eco_ev_app/features/booking/widgets/booking_popup.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,14 +20,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedTab = 0;
-  int _selectedChip = 0;
-  final List<String> chips = ["Nearby", "Top Rated", "Popular", "Availability"];
   String _searchQuery = '';
-
-  // UI colors
-  final Color orange = const Color(0xFFFFA800);
   final Color green = const Color(0xFF138808);
-  final Color ecoGreen = const Color(0xFF61B15A);
   final Color black = const Color(0xFF23272E);
   final Color offWhite = const Color(0xFFFAFAFA);
   final Color mediumGrey = const Color(0xFFECECEC);
@@ -34,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _currentAddress = "Loading location...";
   String _userName = "";
+  Position? _userPosition;
 
   @override
   void initState() {
@@ -78,10 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
         setState(() {
           _currentAddress = area.isNotEmpty ? area : "Unknown location";
+          _userPosition = position;
         });
       } else {
         setState(() {
           _currentAddress = "Unknown location";
+          _userPosition = position;
         });
       }
     } catch (e) {
@@ -115,13 +113,85 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _openDirection(String address) async {
-    if (address.isEmpty) return;
+  void _openDirectionWithLatLng(double? lat, double? lng) async {
+    if (lat == null || lng == null) return;
     final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
     );
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
+    }
+  }
+
+  // Check if a station is open now based on openingHours string, e.g. "7:00 AM - 10:00 PM"
+  bool _isStationOpenNow(Map<String, dynamic> data) {
+    try {
+      if (data['openingHours'] == null) return false;
+      final now = DateTime.now();
+      String str = data['openingHours'].toString().replaceAll('\u202F', ' ');
+      final parts = str.split('-');
+      if (parts.length != 2) return false;
+
+      final format = DateFormat('h:mm a');
+      String openStr = parts[0].trim();
+      String closeStr = parts[1].trim();
+      openStr = openStr.replaceAll('\u202F', ' ');
+      closeStr = closeStr.replaceAll('\u202F', ' ');
+
+      final open = format.parse(openStr);
+      final close = format.parse(closeStr);
+      final nowTime = TimeOfDay(hour: now.hour, minute: now.minute);
+      final openTime = TimeOfDay(hour: open.hour, minute: open.minute);
+      final closeTime = TimeOfDay(hour: close.hour, minute: close.minute);
+
+      if ((closeTime.hour < openTime.hour) ||
+          (closeTime.hour == openTime.hour &&
+              closeTime.minute < openTime.minute)) {
+        // Overnight opening
+        return (nowTime.hour > openTime.hour ||
+                (nowTime.hour == openTime.hour &&
+                    nowTime.minute >= openTime.minute)) ||
+            (nowTime.hour < closeTime.hour ||
+                (nowTime.hour == closeTime.hour &&
+                    nowTime.minute <= closeTime.minute));
+      } else {
+        // Normal daytime
+        return (nowTime.hour > openTime.hour ||
+                (nowTime.hour == openTime.hour &&
+                    nowTime.minute >= openTime.minute)) &&
+            (nowTime.hour < closeTime.hour ||
+                (nowTime.hour == closeTime.hour &&
+                    nowTime.minute <= closeTime.minute));
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  double? _stationDistance(Map<String, dynamic> data) {
+    try {
+      if (_userPosition == null ||
+          data['latitude'] == null ||
+          data['longitude'] == null)
+        return null;
+      final lat =
+          data['latitude'] is double
+              ? data['latitude']
+              : double.tryParse(data['latitude'].toString());
+      final lng =
+          data['longitude'] is double
+              ? data['longitude']
+              : double.tryParse(data['longitude'].toString());
+      if (lat == null || lng == null) return null;
+      return Geolocator.distanceBetween(
+            _userPosition!.latitude,
+            _userPosition!.longitude,
+            lat,
+            lng,
+          ) /
+          1000.0;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -309,65 +379,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 14),
 
-            // FILTER CHIPS
-            SizedBox(
-              height: 38,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: chips.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) {
-                  final selected = i == _selectedChip;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedChip = i),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            selected
-                                ? const Color(0xFFE1F5E5)
-                                : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(22),
-                        border:
-                            selected
-                                ? Border.all(
-                                  color: Colors.teal[600]!,
-                                  width: 1.4,
-                                )
-                                : Border.all(
-                                  color: Colors.grey[300]!,
-                                  width: 1,
-                                ),
-                        boxShadow:
-                            selected
-                                ? [
-                                  BoxShadow(
-                                    color: Colors.teal.withOpacity(0.06),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                                : [],
-                      ),
-                      child: Text(
-                        chips[i],
-                        style: TextStyle(
-                          color: selected ? Colors.teal[700] : Colors.grey[600],
-                          fontWeight:
-                              selected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 22),
-
             // ---- E-STATIONS NEARBY TITLE ----
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -381,7 +392,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/stations');
+                  },
                   child: Text(
                     "See all",
                     style: TextStyle(
@@ -407,30 +420,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  final docs = snapshot.data!.docs;
+                  var docs = snapshot.data!.docs;
 
-                  // Apply filtering for search
-                  final filteredDocs =
+                  // Filter for open now & sort by distance
+                  List<QueryDocumentSnapshot> filteredDocs =
                       docs.where((doc) {
                         final data = doc.data() as Map<String, dynamic>;
-                        final name =
-                            (data['name'] ?? '').toString().toLowerCase();
-                        final address =
-                            (data['address'] ?? '').toString().toLowerCase();
-                        final locality =
-                            (data['locality'] ?? '').toString().toLowerCase();
-                        final district =
-                            (data['district'] ?? '').toString().toLowerCase();
-                        return _searchQuery.isEmpty ||
-                            name.contains(_searchQuery) ||
-                            address.contains(_searchQuery) ||
-                            locality.contains(_searchQuery) ||
-                            district.contains(_searchQuery);
+                        return _isStationOpenNow(data);
                       }).toList();
+
+                  // Sort by distance
+                  if (_userPosition != null) {
+                    filteredDocs.sort((a, b) {
+                      final ad =
+                          _stationDistance(a.data() as Map<String, dynamic>) ??
+                          double.infinity;
+                      final bd =
+                          _stationDistance(b.data() as Map<String, dynamic>) ??
+                          double.infinity;
+                      return ad.compareTo(bd);
+                    });
+                  }
 
                   if (filteredDocs.isEmpty) {
                     return const Center(
-                      child: Text("No matching stations found."),
+                      child: Text("No open stations found nearby."),
                     );
                   }
 
@@ -442,10 +456,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           filteredDocs[i].data() as Map<String, dynamic>;
                       final stationId = filteredDocs[i].id;
 
-                      // For slot counts and icons
                       int slots2x = data['slots2x'] ?? 0;
                       int slots1x = data['slots1x'] ?? 0;
                       int totalSlots = slots2x + slots1x;
+
+                      double? lat =
+                          data['latitude'] is double
+                              ? data['latitude']
+                              : double.tryParse(
+                                data['latitude']?.toString() ?? '',
+                              );
+                      double? lng =
+                          data['longitude'] is double
+                              ? data['longitude']
+                              : double.tryParse(
+                                data['longitude']?.toString() ?? '',
+                              );
+                      double? distanceKm = _stationDistance(data);
 
                       return Container(
                         width: 185,
@@ -505,7 +532,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
-                            // --- Slot counts & icons row
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -574,7 +600,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ),
-                            // --- Address and Direction
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -598,11 +623,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  if (distanceKm != null && distanceKm < 99999)
+                                    Text(
+                                      "${distanceKm.toStringAsFixed(1)} km",
+                                      style: TextStyle(
+                                        color: Colors.teal[700],
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 1,
+                              ),
+                              child: Row(
+                                children: [
                                   TextButton(
                                     onPressed:
-                                        () => _openDirection(
-                                          data['address'] ?? '',
-                                        ),
+                                        (lat != null && lng != null)
+                                            ? () => _openDirectionWithLatLng(
+                                              lat,
+                                              lng,
+                                            )
+                                            : null,
                                     style: TextButton.styleFrom(
                                       padding: EdgeInsets.zero,
                                       minimumSize: const Size(50, 22),
@@ -621,7 +668,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ),
-                            // --- Book Now Button
                             Padding(
                               padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
                               child: SizedBox(
@@ -753,16 +799,10 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (idx) {
           setState(() => _selectedTab = idx);
           if (idx == 1) {
-            // Stations tab
             Navigator.pushNamed(context, '/stations');
           } else if (idx == 2) {
-            // Booking tab
-            Navigator.pushNamed(
-              context,
-              '/booking',
-            ); // <-- This opens BookingScreen
+            Navigator.pushNamed(context, '/booking');
           } else if (idx == 3) {
-            // Profile tab
             Navigator.pushNamed(context, '/profile');
           }
           // Home (idx == 0) does nothing because you're already on Home.
@@ -780,7 +820,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_rounded),
-            label: "Booking", // <-- This is your booking button
+            label: "Booking",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_rounded),
