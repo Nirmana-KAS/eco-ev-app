@@ -179,7 +179,7 @@ class _BookingPopupState extends State<BookingPopup> {
         'price': _price,
         'status': 'booked',
         'createdAt': FieldValue.serverTimestamp(),
-        'latitude': widget.stationData['latitude'],   // <-- Added
+        'latitude': widget.stationData['latitude'], // <-- Added
         'longitude': widget.stationData['longitude'], // <-- Added
       };
 
@@ -190,11 +190,12 @@ class _BookingPopupState extends State<BookingPopup> {
 
       // After successful booking (add notification)
       await FirebaseFirestore.instance.collection('notifications').add({
-        'userId': userId, // Make sure this is the current user's UID
+        'userId': userId,
         'title': 'Booking Confirmed',
-        'body': 'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
+        'body':
+            'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
         'createdAt': FieldValue.serverTimestamp(),
-        'seen': false, // This makes it "new" for notification bell
+        'seen': false,
       });
 
       // Local notification
@@ -203,11 +204,11 @@ class _BookingPopupState extends State<BookingPopup> {
         'Your charging slot at ${widget.stationData['name']} is booked for $bookingTime!',
       );
 
+      // After a successful booking
       if (mounted) {
-        Navigator.pop(context, true); // Close popup
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Booking successful!')));
+        Navigator.pop(context); // Close popup first
+        await Future.delayed(const Duration(milliseconds: 100));
+        Navigator.pushReplacementNamed(context, '/booking');
       }
     } catch (e) {
       ScaffoldMessenger.of(
