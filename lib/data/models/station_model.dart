@@ -1,3 +1,5 @@
+// lib/data/models/station_model.dart
+
 class StationModel {
   final String id;
   final String name;

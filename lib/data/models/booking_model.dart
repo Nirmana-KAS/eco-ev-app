@@ -1,3 +1,5 @@
+// lib/data/models/booking_model.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BookingModel {
@@ -11,6 +13,8 @@ class BookingModel {
   final double price;
   final String status;
   final DateTime createdAt;
+  final double? latitude; // <-- Added
+  final double? longitude; // <-- Added
 
   BookingModel({
     required this.stationId,
@@ -23,6 +27,8 @@ class BookingModel {
     required this.price,
     required this.status,
     required this.createdAt,
+    this.latitude, // <-- Added
+    this.longitude, // <-- Added
   });
 
   factory BookingModel.fromMap(Map<String, dynamic> map) {
@@ -37,6 +43,8 @@ class BookingModel {
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
       status: map['status'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
+      latitude: (map['latitude'] as num?)?.toDouble(), // <-- Added
+      longitude: (map['longitude'] as num?)?.toDouble(), // <-- Added
     );
   }
 
@@ -52,6 +60,8 @@ class BookingModel {
       'price': price,
       'status': status,
       'createdAt': createdAt,
+      'latitude': latitude, // <-- Added
+      'longitude': longitude, // <-- Added
     };
   }
 }

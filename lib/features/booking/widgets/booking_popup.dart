@@ -179,6 +179,8 @@ class _BookingPopupState extends State<BookingPopup> {
         'price': _price,
         'status': 'booked',
         'createdAt': FieldValue.serverTimestamp(),
+        'latitude': widget.stationData['latitude'],   // <-- Added
+        'longitude': widget.stationData['longitude'], // <-- Added
       };
 
       await FirebaseFirestore.instance.collection('bookings').add(bookingData);
