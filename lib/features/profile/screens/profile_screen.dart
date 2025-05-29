@@ -313,6 +313,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onPressed: () => Navigator.pushNamed(context, '/admin'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF30B27C),
+                                  foregroundColor: Colors.white,
+                                  textStyle: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
