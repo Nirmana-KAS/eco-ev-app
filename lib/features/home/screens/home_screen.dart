@@ -756,41 +756,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
-      // BOTTOM NAV BAR
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedTab,
-        onTap: (idx) {
-          setState(() => _selectedTab = idx);
-          if (idx == 1) {
-            Navigator.pushNamed(context, '/stations');
-          } else if (idx == 2) {
-            Navigator.pushNamed(context, '/booking');
-          } else if (idx == 3) {
-            Navigator.pushNamed(context, '/profile');
-          }
-        },
-        selectedItemColor: green,
-        unselectedItemColor: darkGrey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.ev_station_rounded),
-            label: "Stations",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_rounded),
-            label: "Booking",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: "Profile",
-          ),
-        ],
-      ),
     );
   }
 

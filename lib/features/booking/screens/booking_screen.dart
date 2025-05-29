@@ -19,20 +19,22 @@ class _BookingScreenState extends State<BookingScreen> {
   void initState() {
     super.initState();
     final userId = FirebaseAuth.instance.currentUser!.uid;
-    _bookingsStream = FirebaseFirestore.instance
-        .collection('bookings')
-        .where('userId', isEqualTo: userId)
-        .orderBy('endTime', descending: true)
-        .snapshots();
+    _bookingsStream =
+        FirebaseFirestore.instance
+            .collection('bookings')
+            .where('userId', isEqualTo: userId)
+            .orderBy('endTime', descending: true)
+            .snapshots();
   }
 
   /// --- NEW: Helper to get lat/lng from station by stationId ---
   Future<Map<String, double>?> _getStationLatLng(String stationId) async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('stations')
-          .doc(stationId)
-          .get();
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('stations')
+              .doc(stationId)
+              .get();
       if (doc.exists) {
         final data = doc.data()!;
         final lat = data['latitude'];
@@ -40,7 +42,7 @@ class _BookingScreenState extends State<BookingScreen> {
         if (lat != null && lng != null) {
           return {
             'latitude': (lat is double) ? lat : double.parse(lat.toString()),
-            'longitude': (lng is double) ? lng : double.parse(lng.toString())
+            'longitude': (lng is double) ? lng : double.parse(lng.toString()),
           };
         }
       }
@@ -272,39 +274,65 @@ class _BookingScreenState extends State<BookingScreen> {
                           children: [
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: isEnded
-                                    ? null
-                                    : () async {
-                                        // Get lat/lng from stations collection using stationId
-                                        if (stationId.isEmpty) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                                content: Text("Station ID missing in booking.")),
-                                          );
-                                          return;
-                                        }
-                                        final stationLatLng = await _getStationLatLng(stationId);
-                                        if (stationLatLng != null) {
-                                          final url = Uri.parse(
-                                            "https://www.google.com/maps/search/?api=1&query=${stationLatLng['latitude']},${stationLatLng['longitude']}",
-                                          );
-                                          if (await canLaunchUrl(url)) {
-                                            await launchUrl(
-                                              url,
-                                              mode: LaunchMode.externalApplication,
+                                onPressed:
+                                    isEnded
+                                        ? null
+                                        : () async {
+                                          // Get lat/lng from stations collection using stationId
+                                          if (stationId.isEmpty) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Station ID missing in booking.",
+                                                ),
+                                              ),
                                             );
+                                            return;
+                                          }
+                                          final stationLatLng =
+                                              await _getStationLatLng(
+                                                stationId,
+                                              );
+                                          if (stationLatLng != null) {
+                                            final url = Uri.parse(
+                                              "https://www.google.com/maps/search/?api=1&query=${stationLatLng['latitude']},${stationLatLng['longitude']}",
+                                            );
+                                            if (await canLaunchUrl(url)) {
+                                              await launchUrl(
+                                                url,
+                                                mode:
+                                                    LaunchMode
+                                                        .externalApplication,
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Could not open Maps!",
+                                                  ),
+                                                ),
+                                              );
+                                            }
                                           } else {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text("Could not open Maps!")),
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Location not available",
+                                                ),
+                                              ),
                                             );
                                           }
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text("Location not available")),
-                                          );
-                                        }
-                                      },
-                                icon: const Icon(Icons.directions, color: Colors.white),
+                                        },
+                                icon: const Icon(
+                                  Icons.directions,
+                                  color: Colors.white,
+                                ),
                                 label: const Text("Direction"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blueAccent,
@@ -325,42 +353,66 @@ class _BookingScreenState extends State<BookingScreen> {
                               child: OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.red,
-                                  side: const BorderSide(color: Colors.red, width: 1),
+                                  side: const BorderSide(
+                                    color: Colors.red,
+                                    width: 1,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(25),
                                   ),
-                                  minimumSize: const Size(120, 40), // 🔹 New size
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // 🔹 Optional: adjust for more spacing
+                                  minimumSize: const Size(
+                                    120,
+                                    40,
+                                  ), // 🔹 New size
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ), // 🔹 Optional: adjust for more spacing
                                   visualDensity: VisualDensity.standard,
                                 ),
-                                onPressed: isEnded
-                                    ? null
-                                    : () async {
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text("Cancel Booking?"),
-                                            content: const Text(
-                                                "Are you sure you want to cancel this booking?"),
-                                            actions: [
-                                              TextButton(
-                                                child: const Text("No"),
-                                                onPressed: () => Navigator.pop(context, false),
-                                              ),
-                                              TextButton(
-                                                child: const Text("Yes"),
-                                                onPressed: () => Navigator.pop(context, true),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                        if (confirm == true) {
-                                          await FirebaseFirestore.instance
-                                              .collection('bookings')
-                                              .doc(bookingId)
-                                              .delete();
-                                        }
-                                      },
+                                onPressed:
+                                    isEnded
+                                        ? null
+                                        : () async {
+                                          final confirm = await showDialog<
+                                            bool
+                                          >(
+                                            context: context,
+                                            builder:
+                                                (context) => AlertDialog(
+                                                  title: const Text(
+                                                    "Cancel Booking?",
+                                                  ),
+                                                  content: const Text(
+                                                    "Are you sure you want to cancel this booking?",
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      child: const Text("No"),
+                                                      onPressed:
+                                                          () => Navigator.pop(
+                                                            context,
+                                                            false,
+                                                          ),
+                                                    ),
+                                                    TextButton(
+                                                      child: const Text("Yes"),
+                                                      onPressed:
+                                                          () => Navigator.pop(
+                                                            context,
+                                                            true,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                          );
+                                          if (confirm == true) {
+                                            await FirebaseFirestore.instance
+                                                .collection('bookings')
+                                                .doc(bookingId)
+                                                .delete();
+                                          }
+                                        },
                                 icon: const Icon(Icons.cancel, size: 16),
                                 label: const Text(
                                   "Cancel",

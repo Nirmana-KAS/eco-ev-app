@@ -10,6 +10,7 @@ import 'features/auth/screens/otp_verification_screen.dart';
 import 'features/auth/screens/create_new_password_screen.dart';
 import 'features/auth/screens/password_changed_screen.dart';
 import 'features/home/screens/home_screen.dart';
+import 'features/home/screens/dashboard_screen.dart'; // Add this import if not present
 import 'features/map/screens/map_screen.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/admin/screens/add_station_screen.dart';
@@ -48,7 +49,9 @@ class EcoEvRoot extends StatelessWidget {
         '/otp-verification': (context) => const OtpVerificationScreen(),
         '/create-new-password': (context) => const CreateNewPasswordScreen(),
         '/password-changed': (context) => const PasswordChangedScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home':
+            (context) =>
+                const DashboardScreen(), // <-- Use DashboardScreen here
         '/map': (context) => const MapScreen(),
         '/admin': (context) => const AdminDashboardScreen(),
         '/add-station': (context) => const AddStationScreen(),
@@ -80,7 +83,7 @@ class AuthGate extends StatelessWidget {
           return const SplashScreen();
         }
         if (snapshot.hasData) {
-          return const HomeScreen();
+          return const DashboardScreen(); // ✅ Fixed: use DashboardScreen for authenticated users
         }
         return const WelcomeScreen();
       },
