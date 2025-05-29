@@ -352,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: mediumGrey,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
                   children: [
@@ -738,15 +738,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Center(child: CircularProgressIndicator());
                 final recommendedStations = snapshot.data!.docs;
                 return Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center, // center all children
                   children: List.generate(recommendedStations.length, (index) {
                     final station = recommendedStations[index];
                     return Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: 12.0,
-                      ), // Prevent overflow
-                      child: RecommendationsCard(
-                        data: station.data() as Map<String, dynamic>,
-                        stationId: station.id,
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Center(
+                        // this ensures each card is centered
+                        child: RecommendationsCard(
+                          data: station.data() as Map<String, dynamic>,
+                          stationId: station.id,
+                        ),
                       ),
                     );
                   }),
@@ -875,7 +878,8 @@ class RecommendationsCard extends StatelessWidget {
       },
       child: Container(
         width: 320,
-        margin: const EdgeInsets.only(right: 16),
+        height: 268,
+        margin: const EdgeInsets.only(right:4),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),

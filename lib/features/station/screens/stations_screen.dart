@@ -156,8 +156,8 @@ class _StationsScreenState extends State<StationsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
+          color: const Color.fromARGB(255, 233, 235, 235),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           children: [
@@ -422,7 +422,6 @@ class _StationCard extends StatelessWidget {
                                     color: Color(0xFF0BA678),
                                     fontWeight: FontWeight.w500,
                                     fontSize: 15,
-                                    decoration: TextDecoration.underline,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,

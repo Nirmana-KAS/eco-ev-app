@@ -15,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _photoUrl;
   bool _isUploading = false;
+  String? _role;
 
   // For image picking
   Future<void> _pickAndUploadImage() async {
@@ -61,84 +62,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showAboutUsDialog() {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text("About Us"),
-            content: const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("ECO EV App\n"),
-                Text(
-                  "Empowering Sri Lanka's EV future with smart, easy, and accessible charging solutions.\n",
-                ),
-                Divider(),
-                Text("Company: ECO EV Solutions Pvt Ltd"),
-                Text("Hotline: +94 77 123 4567"),
-                Text("Email: support@ecoev.lk"),
-                Text("Location: Colombo, Sri Lanka"),
-                SizedBox(height: 8),
-                Text("Version: 1.0.0"),
-              ],
+      builder: (context) => AlertDialog(
+        title: const Text("About Us"),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("ECO EV App\n"),
+            Text(
+              "Empowering Sri Lanka's EV future with smart, easy, and accessible charging solutions.\n",
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Close"),
-              ),
-            ],
+            Divider(),
+            Text("Company: ECO EV Solutions Pvt Ltd"),
+            Text("Hotline: +94 77 123 4567"),
+            Text("Email: support@ecoev.lk"),
+            Text("Location: Colombo, Sri Lanka"),
+            SizedBox(height: 8),
+            Text("Version: 1.0.0"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close"),
           ),
+        ],
+      ),
     );
   }
 
-  void _showFeedbackDialog() {
-    final _feedbackController = TextEditingController();
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text("Feedback"),
-            content: TextField(
-              controller: _feedbackController,
-              minLines: 2,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: "Let us know your thoughts...",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final feedback = _feedbackController.text.trim();
-                  if (feedback.isNotEmpty) {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user != null) {
-                      await FirebaseFirestore.instance
-                          .collection('feedbacks')
-                          .add({
-                            'uid': user.uid,
-                            'feedback': feedback,
-                            'created_at': DateTime.now(),
-                          });
-                    }
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Thank you for your feedback!'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text("Submit"),
-              ),
-            ],
-          ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserRole();
+  }
+
+  Future<void> _fetchUserRole() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        setState(() {
+          _role = doc.data()!['role'] ?? '';
+        });
+      }
+    }
   }
 
   @override
@@ -150,8 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed:
-              () => Navigator.pop(context), // ✅ Goes back to DashboardScreen
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text("My Profile"),
         backgroundColor: Colors.white,
@@ -188,34 +155,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return SafeArea(
             child: Column(
               children: [
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 24,
-                    ),
-                    children: [
-                      // Profile Photo with edit icon
-                      Center(
+                // Profile header area
+                Stack(
+                  children: [
+                    // The header content (profile image, edit, admin button)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: 30, bottom: 18),
+                      child: Center(
                         child: Stack(
+                          clipBehavior: Clip.none,
                           children: [
+                            // Profile image
                             CircleAvatar(
                               radius: 52,
                               backgroundColor: Colors.grey[300],
-                              backgroundImage:
-                                  (photoUrl.isNotEmpty)
-                                      ? NetworkImage(photoUrl)
-                                      : const AssetImage(
-                                            'assets/profile_placeholder.png',
-                                          )
-                                          as ImageProvider,
+                              backgroundImage: (photoUrl.isNotEmpty)
+                                  ? NetworkImage(photoUrl)
+                                  : const AssetImage('assets/profile_placeholder.png') as ImageProvider,
                             ),
+                            // Edit photo icon (bottom right)
                             Positioned(
                               bottom: 4,
                               right: 4,
                               child: InkWell(
-                                onTap:
-                                    _isUploading ? null : _pickAndUploadImage,
+                                onTap: _isUploading ? null : _pickAndUploadImage,
                                 borderRadius: BorderRadius.circular(25),
                                 child: Container(
                                   padding: const EdgeInsets.all(7),
@@ -223,29 +187,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.black.withOpacity(0.7),
                                     shape: BoxShape.circle,
                                   ),
-                                  child:
-                                      _isUploading
-                                          ? const SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                          : const Icon(
-                                            Icons.edit,
+                                  child: _isUploading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
                                             color: Colors.white,
-                                            size: 20,
                                           ),
+                                        )
+                                      : const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
+                    ),
+                    // Admin Dashboard Floating Button (top right of header area)
+                    if (_role == 'admin')
+                      Positioned(
+                        top: 18, // adjust vertically if needed
+                        right: 30, // adjust horizontally if needed
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/admin');
+                            },
+                            borderRadius: BorderRadius.circular(28),
+                            child: CircleAvatar(
+                              radius: 22,
+                              backgroundColor: const Color(0xFF30B27C),
+                              child: const Icon(
+                                Icons.admin_panel_settings,
+                                color: Colors.white,
+                                size: 25,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 0,
+                    ),
+                    children: [
                       // Username
+                      const SizedBox(height: 10),
                       Text(
                         username,
                         style: const TextStyle(
@@ -323,46 +320,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             );
                           },
                         ),
-                      ),
-                      // --- Admin Dashboard Button (only for admin role) ---
-                      FutureBuilder<DocumentSnapshot>(
-                        future:
-                            FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(FirebaseAuth.instance.currentUser!.uid)
-                                .get(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox();
-                          final data =
-                              snapshot.data!.data() as Map<String, dynamic>?;
-                          if (data != null && data['role'] == 'admin') {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14.0,
-                              ),
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.admin_panel_settings),
-                                label: const Text("Admin Dashboard"),
-                                onPressed:
-                                    () =>
-                                        Navigator.pushNamed(context, '/admin'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF30B27C),
-                                  foregroundColor: Colors.white,
-                                  textStyle: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  minimumSize: const Size(double.infinity, 50),
-                                ),
-                              ),
-                            );
-                          }
-                          return const SizedBox();
-                        },
                       ),
                     ],
                   ),
