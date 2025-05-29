@@ -207,6 +207,7 @@ class StationDetailScreen extends StatelessWidget {
                         label: const Text("Direction"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -214,6 +215,7 @@ class StationDetailScreen extends StatelessWidget {
                           elevation: 1.5,
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w600,
+                            fontSize: 15,
                           ),
                         ),
                       ),
@@ -233,10 +235,11 @@ class StationDetailScreen extends StatelessWidget {
                         },
                         child: const Text("Book Slot"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[700],
+                          backgroundColor: Color(0xFF30B27C),
+                          foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 50),
                           textStyle: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                           shape: RoundedRectangleBorder(
