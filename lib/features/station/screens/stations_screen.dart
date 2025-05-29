@@ -342,7 +342,7 @@ class _StationCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Color(0xFF22A060),
                         fontWeight: FontWeight.bold,
-                        fontSize: 22,
+                        fontSize: 20,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -495,6 +495,7 @@ class _StationCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
+                  
                 ),
               ),
               onPressed: () {
@@ -510,7 +511,7 @@ class _StationCard extends StatelessWidget {
                 "Book Now",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 18,
                   letterSpacing: 0.3,
                 ),
               ),

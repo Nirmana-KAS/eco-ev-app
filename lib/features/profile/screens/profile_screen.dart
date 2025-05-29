@@ -278,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             textStyle: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 17,
+                              fontSize: 15,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(25),
@@ -313,6 +313,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onPressed: () => Navigator.pushNamed(context, '/admin'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF30B27C),
+                                  foregroundColor: Colors.white,
+                                  textStyle: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -345,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(color: Color(0xFF007800), width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                               ),
                               onPressed: _showAboutUsDialog,
@@ -361,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(color: Color(0xFF007800), width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                               ),
                               onPressed: () {
