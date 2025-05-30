@@ -878,7 +878,7 @@ class RecommendationsCard extends StatelessWidget {
       },
       child: Container(
         width: 320,
-        height: 268,
+        height: 290,
         margin: const EdgeInsets.only(right:4),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -926,14 +926,14 @@ class RecommendationsCard extends StatelessWidget {
                   top: 13,
                   right: 13,
                   child: Container(
-                    width: 48,
-                    height: 48,
+                    width: 25,
+                    height: 25,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
                     child: const Center(
-                      child: Icon(Icons.star, color: Colors.amber, size: 32),
+                      child: Icon(Icons.star, color: Colors.amber, size: 25),
                     ),
                   ),
                 ),
@@ -986,7 +986,7 @@ class RecommendationsCard extends StatelessWidget {
                         child: Icon(
                           Icons.directions,
                           color: Colors.teal[600],
-                          size: 20,
+                          size: 40,
                         ),
                       ),
                     ],
@@ -1015,7 +1015,7 @@ class RecommendationsCard extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: const Color(0xFF30B27C),
                         minimumSize: const Size(double.infinity, 38),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -1042,6 +1042,7 @@ class RecommendationsCard extends StatelessWidget {
                         'Book Now',
                         style: TextStyle(
                           color: Colors.white,
+                          
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
